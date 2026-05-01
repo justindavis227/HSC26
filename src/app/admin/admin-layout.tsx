@@ -9,6 +9,7 @@ const navItems = [
   { path: '/admin/speakers', label: 'Speakers', icon: '🎤' },
   { path: '/admin/faq', label: 'FAQ', icon: '❓' },
   { path: '/admin/camp-info', label: 'Camp Info', icon: '⚙️' },
+  { path: '/admin/campus-times', label: 'Campus Info', icon: '🏫' },
 ];
 
 export function AdminLayout() {

@@ -55,3 +55,10 @@ export interface CampInfo {
   value: string;
   updated_at?: string;
 }
+
+export interface CampusTime {
+  id: number;
+  campus_name: string;
+  location: string;
+  updated_at?: string;
+}

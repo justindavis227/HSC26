@@ -1,7 +1,9 @@
 import { useParams, Link } from 'react-router';
-import { ArrowLeft, MapPin, Utensils, Home, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Utensils, Home, Users, Clock } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { campData } from '../data/camp-data';
+import { useState, useEffect } from 'react';
+import { supabase } from '../../lib/supabase';
 
 function formatTextWithBold(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*|Male Dorms:|Female Dorms:|Male Small Group Zones:|Female Small Group Zones:)/g);
@@ -20,6 +22,17 @@ export function CampusDetailPage() {
   const campus = campData.campuses.find(
     (c) => c.name.toLowerCase().replace(/\s+/g, '-').replace(/\//g, '-') === campusName
   );
+  const [campusTimeLocation, setCampusTimeLocation] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!campus) return;
+    supabase
+      .from('campus_times')
+      .select('location')
+      .eq('campus_name', campus.name)
+      .single()
+      .then(({ data }) => setCampusTimeLocation(data?.location ?? null));
+  }, [campus?.name]);
 
   if (!campus) {
     return (
@@ -76,6 +89,17 @@ export function CampusDetailPage() {
             </div>
           </Card>
         )}
+        {campusTimeLocation && (
+          <Card className="p-4">
+            <div className="flex items-start gap-3">
+              <Clock className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="mb-1 text-base">Campus Time</h3>
+                <p className="text-muted-foreground text-sm">{campusTimeLocation}</p>
+              </div>
+            </div>
+          </Card>
+        )}
         {campus.address && (
           <Card className="p-4">
             <div className="flex items-start gap-3">
@@ -113,7 +137,7 @@ export function CampusDetailPage() {
             </div>
           </Card>
         )}
-        {!campus.description && !campus.address && !campus.contact && !campus.smallGroupZones && !campus.dining && (
+        {!campus.description && !campus.address && !campus.contact && !campus.smallGroupZones && !campus.dining && !campusTimeLocation && (
           <Card className="p-4">
             <p className="text-center text-muted-foreground italic text-sm">Information coming soon</p>
           </Card>

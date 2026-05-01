@@ -25,6 +25,7 @@ import { AdminSchedule } from './admin/schedule';
 import { AdminSpeakers } from './admin/speakers';
 import { AdminFAQ } from './admin/faq';
 import { AdminCampInfo } from './admin/camp-info';
+import { AdminCampusTimes } from './admin/campus-times';
 
 export const navigationItems = [
   { path: '/', label: 'Dashboard', icon: Home },
@@ -54,6 +55,7 @@ export const router = createBrowserRouter([
       { path: 'speakers', element: <AdminSpeakers /> },
       { path: 'faq', element: <AdminFAQ /> },
       { path: 'camp-info', element: <AdminCampInfo /> },
+      { path: 'campus-times', element: <AdminCampusTimes /> },
     ],
   },
 

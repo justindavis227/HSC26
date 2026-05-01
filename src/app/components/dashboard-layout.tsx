@@ -34,7 +34,9 @@ export function DashboardLayout() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-card border-b border-border z-30 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="text-primary font-bold text-lg">HSC 2026</span>
+          <div className="bg-primary rounded-md px-2 py-1">
+            <img src="/images/logo.png" alt="HSC 2026" className="h-8 object-contain" />
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={toggleTheme} className="p-2" aria-label="Toggle theme">
@@ -53,11 +55,13 @@ export function DashboardLayout() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="p-6 border-b border-border">
-          <div className="flex flex-col gap-2 items-start">
-            <span className="text-primary font-bold text-2xl">HSC 2026</span>
-            <p className="text-xs text-muted-foreground">Camp Dashboard</p>
-          </div>
+        <div className="px-5 py-4 border-b border-primary/30 bg-primary">
+          <img
+            src="/images/logo.png"
+            alt="Southeast Camps — High School Camp"
+            style={{ width: '140px' }}
+            className="object-contain"
+          />
         </div>
 
         <nav className="p-4 space-y-1">

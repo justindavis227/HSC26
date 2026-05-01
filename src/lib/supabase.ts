@@ -59,6 +59,12 @@ export interface CampInfo {
 export interface CampusTime {
   id: number;
   campus_name: string;
-  location: string;
+  location: string;       // campus time location
+  neighborhood: string;
+  dining: string;
+  male_dorms: string;
+  female_dorms: string;
+  male_sg_zones: string;
+  female_sg_zones: string;
   updated_at?: string;
 }

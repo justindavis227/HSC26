@@ -12,16 +12,18 @@ export function HomePage() {
   const today = localDateString();
   const [todayAnnouncements, setTodayAnnouncements] = useState<Announcement[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [debugInfo, setDebugInfo] = useState<{ count: number; error: string | null }>({ count: 0, error: null });
 
   useEffect(() => {
     async function load() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('announcements')
         .select('*')
         .eq('date', today)
         .order('created_at', { ascending: false });
       const items = data ?? [];
       setTodayAnnouncements(items);
+      setDebugInfo({ count: items.length, error: error?.message ?? null });
 
       const { data: all } = await supabase.from('announcements').select('id');
       setUnreadCount(getUnreadCount(all ?? []));
@@ -103,6 +105,12 @@ export function HomePage() {
           </p>
         </div>
       </Card>
+      <div className="rounded border border-gray-300 bg-gray-100 dark:bg-gray-800 dark:border-gray-600 p-3 text-xs text-gray-500 dark:text-gray-400 font-mono space-y-1">
+        <div><span className="font-semibold">debug</span></div>
+        <div>today: {today}</div>
+        <div>announcements fetched: {debugInfo.count}</div>
+        <div>error: {debugInfo.error ?? 'none'}</div>
+      </div>
     </div>
   );
 }

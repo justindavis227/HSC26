@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Theme } from '../../lib/supabase';
+import { useCampDates } from '../hooks/use-camp-dates';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -9,6 +10,7 @@ export function AdminThemes() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const { dayLabel } = useCampDates();
 
   useEffect(() => {
     supabase
@@ -46,7 +48,7 @@ export function AdminThemes() {
       {DAYS.map((day) => (
         <div key={day} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{day}</label>
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{dayLabel(day)}</label>
             {saved === day && (
               <span className="text-xs text-green-600 dark:text-green-400 font-medium">Saved!</span>
             )}

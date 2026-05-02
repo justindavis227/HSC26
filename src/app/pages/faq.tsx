@@ -1,7 +1,20 @@
-import { campData } from '../data/camp-data';
+import { useState, useEffect } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
+import { supabase } from '../../lib/supabase';
+import type { FAQ } from '../../lib/supabase';
 
 export function FAQPage() {
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from('faqs')
+      .select('*')
+      .order('sort_order')
+      .then(({ data }) => { setFaqs(data ?? []); setLoading(false); });
+  }, []);
+
   return (
     <div className="p-6 space-y-6">
       <div>
@@ -10,22 +23,26 @@ export function FAQPage() {
       </div>
 
       <div className="max-w-3xl">
-        <Accordion type="single" collapsible className="space-y-2">
-          {campData.faqs.map((faq, index) => (
-            <AccordionItem
-              key={index}
-              value={`item-${index}`}
-              className="bg-white dark:bg-gray-800 border rounded-lg px-6"
-            >
-              <AccordionTrigger className="hover:no-underline">
-                <span className="text-left font-semibold">{faq.question}</span>
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground whitespace-pre-line">
-                {faq.answer}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
+        {loading ? (
+          <p className="text-muted-foreground text-sm text-center py-8">Loading…</p>
+        ) : (
+          <Accordion type="single" collapsible className="space-y-2">
+            {faqs.map((faq) => (
+              <AccordionItem
+                key={faq.id}
+                value={String(faq.id)}
+                className="bg-white dark:bg-gray-800 border rounded-lg px-6"
+              >
+                <AccordionTrigger className="hover:no-underline">
+                  <span className="text-left font-semibold">{faq.question}</span>
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground whitespace-pre-line">
+                  {faq.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
       </div>
 
       <div className="max-w-3xl mt-8 p-6 bg-primary/5 border border-primary/20 rounded-lg">

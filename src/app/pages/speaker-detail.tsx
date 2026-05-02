@@ -1,14 +1,31 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router';
-import { campData } from '../data/camp-data';
 import { Card } from '../components/ui/card';
 import { ArrowLeft, Instagram, User } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { supabase } from '../../lib/supabase';
+import type { Speaker } from '../../lib/supabase';
 
 export function SpeakerDetailPage() {
   const { speakerName } = useParams();
-  const speaker = campData.speakers.find(
-    (s) => s.name.toLowerCase().replace(/\s+/g, '-') === speakerName
-  );
+  const [speaker, setSpeaker] = useState<Speaker | null | undefined>(undefined);
+
+  useEffect(() => {
+    supabase
+      .from('speakers')
+      .select('*')
+      .order('sort_order')
+      .then(({ data }) => {
+        const found = (data ?? []).find(
+          (s: Speaker) => s.name.toLowerCase().replace(/\s+/g, '-') === speakerName
+        );
+        setSpeaker(found ?? null);
+      });
+  }, [speakerName]);
+
+  if (speaker === undefined) {
+    return <div className="p-6 text-sm text-muted-foreground text-center py-12">Loading…</div>;
+  }
 
   if (!speaker) {
     return (

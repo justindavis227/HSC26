@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 import type { ScheduleItem } from '../../lib/supabase';
 import { useCampus } from '../context/campus-context';
 import { campusSchedules } from '../data/campus-schedules';
+import { useCampDates } from '../hooks/use-camp-dates';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -14,6 +15,7 @@ export function SchedulePage() {
   const { selectedCampus, setSelectedCampus } = useCampus();
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const { dayLabel } = useCampDates();
 
   const campusNames = campusSchedules.map((c) => c.name);
 
@@ -68,7 +70,7 @@ export function SchedulePage() {
             <TabsList className="inline-flex w-full min-w-max">
               {days.map((day) => (
                 <TabsTrigger key={day} value={day} className="flex-1 min-w-[80px] text-xs sm:text-sm px-3">
-                  {day}
+                  {dayLabel(day)}
                 </TabsTrigger>
               ))}
             </TabsList>

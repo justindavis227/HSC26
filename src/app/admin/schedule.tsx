@@ -4,8 +4,8 @@ import type { ScheduleItem } from '../../lib/supabase';
 import { campData } from '../data/camp-data';
 import { campusSchedules } from '../data/campus-schedules';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
-const DAY_ORDER: Record<string, number> = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 };
+const DAYS = ['Sun Jun 29', 'Mon Jun 30', 'Tue Jul 1', 'Wed Jul 2', 'Thu Jul 3'];
+const DAY_ORDER: Record<string, number> = { 'Sun Jun 29': 1, 'Mon Jun 30': 2, 'Tue Jul 1': 3, 'Wed Jul 2': 4, 'Thu Jul 3': 5 };
 const ALL_CAMPUSES = campusSchedules.map((c) => c.name);
 
 type ItemForm = { time: string; activity: string; location: string; sort_order: number };

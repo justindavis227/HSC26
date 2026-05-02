@@ -119,6 +119,10 @@ Vercel config: none required — Vite SPA routing needs `vercel.json`:
 - Add icons to `public/icons/` for full install experience
 - `viewport-fit=cover` handles iPhone notch safely
 
+## Schedule Day Labels — NEVER CHANGE
+
+Schedule items in the `schedule_items` Supabase table **always use generic day names**: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`. Never use specific dates (e.g. "Mon Jun 29") as the `day` field value. Actual calendar dates are stored separately in `camp_info` as `camp_start_date` / `camp_end_date` and are computed at render time in `schedule.tsx`. This convention must be preserved in all future imports, seeds, and migrations.
+
 ## Secret Page
 
 Password: `JeFFerSON` (9 chars). Change in `src/app/components/password-modal.tsx` → `CORRECT_PASSWORD`.

@@ -8,14 +8,36 @@ import type { ScheduleItem } from '../../lib/supabase';
 import { useCampus } from '../context/campus-context';
 import { campusSchedules } from '../data/campus-schedules';
 
-const DAYS = ['Sun Jun 29', 'Mon Jun 30', 'Tue Jul 1', 'Wed Jul 2', 'Thu Jul 3'];
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+function getDayLabel(day: string, campStartDate: string | null): string {
+  if (!campStartDate) return day;
+  const idx = DAYS.indexOf(day);
+  if (idx === -1) return day;
+  // Parse as local date (noon avoids any DST/timezone edge)
+  const [y, m, d] = campStartDate.split('-').map(Number);
+  const date = new Date(y, m - 1, d + idx);
+  const mon = date.toLocaleDateString('en-US', { month: 'short' });
+  const dayNum = date.getDate();
+  return `${day} ${mon} ${dayNum}`;
+}
 
 export function SchedulePage() {
   const { selectedCampus, setSelectedCampus } = useCampus();
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [campStartDate, setCampStartDate] = useState<string | null>(null);
 
   const campusNames = campusSchedules.map((c) => c.name);
+
+  useEffect(() => {
+    supabase
+      .from('camp_info')
+      .select('value')
+      .eq('key', 'camp_start_date')
+      .maybeSingle()
+      .then(({ data }) => setCampStartDate(data?.value ?? null));
+  }, []);
 
   useEffect(() => {
     if (!selectedCampus) { setItems([]); return; }
@@ -68,7 +90,7 @@ export function SchedulePage() {
             <TabsList className="inline-flex w-full min-w-max">
               {days.map((day) => (
                 <TabsTrigger key={day} value={day} className="flex-1 min-w-[80px] text-xs sm:text-sm px-3">
-                  {day}
+                  {getDayLabel(day, campStartDate)}
                 </TabsTrigger>
               ))}
             </TabsList>

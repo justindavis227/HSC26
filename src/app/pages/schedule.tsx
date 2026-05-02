@@ -1,9 +1,9 @@
 import { Card } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Clock, MapPin, ChevronDown } from 'lucide-react';
-import { useState } from 'react';
 import { Link } from 'react-router';
 import { campusSchedules } from '../data/campus-schedules';
+import { useCampus } from '../context/campus-context';
 
 function processScheduleActivities(activities: Array<{ time: string; activity: string; location: string }>) {
   const processed: Array<{ time: string; activity: string; location: string }> = [];
@@ -21,7 +21,7 @@ function processScheduleActivities(activities: Array<{ time: string; activity: s
 }
 
 export function SchedulePage() {
-  const [selectedCampus, setSelectedCampus] = useState('');
+  const { selectedCampus, setSelectedCampus } = useCampus();
   const campus = campusSchedules.find((c) => c.name === selectedCampus);
 
   return (

@@ -1,6 +1,6 @@
 import { campData } from '../data/camp-data';
 import { Card } from '../components/ui/card';
-import { Calendar, Users, TrendingUp, ArrowRight, Armchair, Lock } from 'lucide-react';
+import { Calendar, Users, TrendingUp, ArrowRight, Armchair, Lock, Palette } from 'lucide-react';
 import { Link } from 'react-router';
 import { useState } from 'react';
 import { PasswordModal } from '../components/password-modal';
@@ -90,6 +90,18 @@ export function SessionInfoPage() {
                 <p className="text-sm text-muted-foreground">Meet the speakers sharing at camp this year</p>
               </div>
               <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Card>
+        </Link>
+
+        <Link to="/themes">
+          <Card className="p-6 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg mb-1">Daily Themes</h3>
+                <p className="text-sm text-muted-foreground">What to wear each day of camp</p>
+              </div>
+              <Palette className="w-6 h-6 text-primary group-hover:scale-110 transition-transform" />
             </div>
           </Card>
         </Link>

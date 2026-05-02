@@ -6,7 +6,7 @@ const navItems = [
   { path: '/admin', label: 'Dashboard', icon: '📊', end: true },
   { path: '/admin/announcements', label: 'Announcements', icon: '📢' },
   { path: '/admin/schedule', label: 'Schedule', icon: '📅' },
-  { path: '/admin/speakers', label: 'Speakers', icon: '🎤' },
+  { path: '/admin/sessions', label: 'Sessions', icon: '🎤' },
   { path: '/admin/faq', label: 'FAQ', icon: '❓' },
   { path: '/admin/camp-info', label: 'Camp Info', icon: '⚙️' },
   { path: '/admin/campus-times', label: 'Campus Info', icon: '🏫' },

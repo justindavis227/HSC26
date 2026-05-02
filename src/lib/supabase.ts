@@ -56,6 +56,14 @@ export interface CampInfo {
   updated_at?: string;
 }
 
+export interface Theme {
+  id: number;
+  day: string;
+  theme_name: string;
+  sort_order: number;
+  updated_at?: string;
+}
+
 export interface CampusTime {
   id: number;
   campus_name: string;

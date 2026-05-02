@@ -13,6 +13,7 @@ import { CampusInfoPage } from './pages/campus-info';
 import { CampusDetailPage } from './pages/campus-detail';
 import { SpeakersPage } from './pages/speakers';
 import { SpeakerDetailPage } from './pages/speaker-detail';
+import { ThemesPage } from './pages/themes';
 import { DecisionGuidePage } from './pages/decision-guide';
 import { SeatingChartPage } from './pages/seating-chart';
 import { SecretPage } from './pages/secret-page';
@@ -22,7 +23,7 @@ import { AdminLogin } from './admin/login';
 import { AdminDashboard } from './admin/dashboard';
 import { AdminAnnouncements } from './admin/announcements';
 import { AdminSchedule } from './admin/schedule';
-import { AdminSpeakers } from './admin/speakers';
+import { AdminSessions } from './admin/sessions';
 import { AdminFAQ } from './admin/faq';
 import { AdminCampInfo } from './admin/camp-info';
 import { AdminCampusTimes } from './admin/campus-times';
@@ -52,7 +53,7 @@ export const router = createBrowserRouter([
       { index: true, element: <AdminDashboard /> },
       { path: 'announcements', element: <AdminAnnouncements /> },
       { path: 'schedule', element: <AdminSchedule /> },
-      { path: 'speakers', element: <AdminSpeakers /> },
+      { path: 'sessions', element: <AdminSessions /> },
       { path: 'faq', element: <AdminFAQ /> },
       { path: 'camp-info', element: <AdminCampInfo /> },
       { path: 'campus-times', element: <AdminCampusTimes /> },
@@ -74,6 +75,7 @@ export const router = createBrowserRouter([
       { path: 'seating-chart', element: <SeatingChartPage /> },
       { path: 'speakers', element: <SpeakersPage /> },
       { path: 'speakers/:speakerName', element: <SpeakerDetailPage /> },
+      { path: 'themes', element: <ThemesPage /> },
       { path: 'contacts', element: <ContactsPage /> },
       { path: 'campus-info', element: <CampusInfoPage /> },
       { path: 'campus-info/:campusName', element: <CampusDetailPage /> },

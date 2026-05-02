@@ -28,7 +28,6 @@ import { AdminFAQ } from './admin/faq';
 import { AdminCampInfo } from './admin/camp-info';
 import { AdminCampusTimes } from './admin/campus-times';
 import { AdminActivities } from './admin/activities';
-import { AdminSeatingCharts } from './admin/seating-charts';
 import { ActivitiesPage } from './pages/activities';
 
 export const navigationItems = [
@@ -62,7 +61,6 @@ export const router = createBrowserRouter([
       { path: 'camp-info', element: <AdminCampInfo /> },
       { path: 'campus-times', element: <AdminCampusTimes /> },
       { path: 'activities', element: <AdminActivities /> },
-      { path: 'seating-charts', element: <AdminSeatingCharts /> },
     ],
   },
 

@@ -11,7 +11,6 @@ const navItems = [
   { path: '/admin/camp-info', label: 'Camp Info', icon: '⚙️' },
   { path: '/admin/campus-times', label: 'Campus Info', icon: '🏫' },
   { path: '/admin/activities', label: 'Activities', icon: '🏆' },
-  { path: '/admin/seating-charts', label: 'Seating Charts', icon: '💺' },
 ];
 
 export function AdminLayout() {

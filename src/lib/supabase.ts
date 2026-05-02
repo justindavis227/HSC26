@@ -56,6 +56,29 @@ export interface CampInfo {
   updated_at?: string;
 }
 
+export interface Tournament {
+  id: number;
+  day: string;
+  day_order: number;
+  activity: string;
+  sort_order: number;
+  updated_at?: string;
+}
+
+export interface Elective {
+  id: number;
+  day: string;
+  day_order: number;
+  time_slot: string;
+  slot_order: number;
+  theme: string;
+  theme_order: number;
+  title: string;
+  speaker: string;
+  location: string;
+  updated_at?: string;
+}
+
 export interface Theme {
   id: number;
   day: string;

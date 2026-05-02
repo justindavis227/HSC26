@@ -1,4 +1,4 @@
-import { Home, Calendar, FolderOpen, Map, Info, Phone, Bell, HelpCircle, Building2 } from 'lucide-react';
+import { Home, Calendar, FolderOpen, Map, Info, Phone, Bell, HelpCircle, Building2, Trophy } from 'lucide-react';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { DashboardLayout } from './components/dashboard-layout';
 import { HomePage } from './pages/home';
@@ -27,6 +27,8 @@ import { AdminSessions } from './admin/sessions';
 import { AdminFAQ } from './admin/faq';
 import { AdminCampInfo } from './admin/camp-info';
 import { AdminCampusTimes } from './admin/campus-times';
+import { AdminActivities } from './admin/activities';
+import { ActivitiesPage } from './pages/activities';
 
 export const navigationItems = [
   { path: '/', label: 'Dashboard', icon: Home },
@@ -37,6 +39,7 @@ export const navigationItems = [
   { path: '/group-materials', label: 'Groups', icon: FolderOpen },
   { path: '/contacts', label: 'Contact Info', icon: Phone },
   { path: '/campus-info', label: 'Campus Info', icon: Building2 },
+  { path: '/activities', label: 'Activities', icon: Trophy },
   { path: '/faq', label: 'FAQ', icon: HelpCircle },
 ];
 
@@ -57,6 +60,7 @@ export const router = createBrowserRouter([
       { path: 'faq', element: <AdminFAQ /> },
       { path: 'camp-info', element: <AdminCampInfo /> },
       { path: 'campus-times', element: <AdminCampusTimes /> },
+      { path: 'activities', element: <AdminActivities /> },
     ],
   },
 
@@ -76,6 +80,7 @@ export const router = createBrowserRouter([
       { path: 'speakers', element: <SpeakersPage /> },
       { path: 'speakers/:speakerName', element: <SpeakerDetailPage /> },
       { path: 'themes', element: <ThemesPage /> },
+      { path: 'activities', element: <ActivitiesPage /> },
       { path: 'contacts', element: <ContactsPage /> },
       { path: 'campus-info', element: <CampusInfoPage /> },
       { path: 'campus-info/:campusName', element: <CampusDetailPage /> },

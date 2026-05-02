@@ -2,6 +2,7 @@ import { Card } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Clock, MapPin, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { campusSchedules } from '../data/campus-schedules';
 
 function processScheduleActivities(activities: Array<{ time: string; activity: string; location: string }>) {
@@ -67,7 +68,13 @@ export function SchedulePage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start gap-2">
                           <span className="text-sm font-medium text-primary whitespace-nowrap">{activity.time}</span>
-                          <span className="text-sm">{activity.activity}</span>
+                          {activity.activity === 'Afternoon Activities' ? (
+                            <Link to="/activities" className="text-sm text-primary underline underline-offset-2 hover:opacity-75 transition-opacity">
+                              {activity.activity}
+                            </Link>
+                          ) : (
+                            <span className="text-sm">{activity.activity}</span>
+                          )}
                         </div>
                         {activity.location && (
                           <div className="flex items-center gap-1 mt-2 text-muted-foreground">

@@ -13,8 +13,23 @@ export interface Announcement {
   date: string;
   title: string;
   content: string;
+  content_html?: string;
+  scheduled_at?: string | null;
   priority: 'high' | 'normal';
   created_at?: string;
+}
+
+export interface AnnouncementAttachment {
+  id: number;
+  announcement_id: string;
+  file_url: string;
+  file_name: string;
+  file_type: 'image' | 'pdf';
+  created_at?: string;
+}
+
+export interface AnnouncementWithAttachments extends Announcement {
+  announcement_attachments: AnnouncementAttachment[];
 }
 
 export interface ScheduleItem {

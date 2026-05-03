@@ -98,7 +98,18 @@ export function SchedulePage() {
                         {item.location && (
                           <div className="flex items-center gap-1 mt-2 text-muted-foreground">
                             <MapPin className="w-3 h-3 flex-shrink-0" />
-                            <span className="text-xs">{item.location}</span>
+                            {item.maps_url ? (
+                              <a
+                                href={item.maps_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs text-primary underline underline-offset-2 hover:opacity-75 transition-opacity"
+                              >
+                                {item.location}
+                              </a>
+                            ) : (
+                              <span className="text-xs">{item.location}</span>
+                            )}
                           </div>
                         )}
                       </div>

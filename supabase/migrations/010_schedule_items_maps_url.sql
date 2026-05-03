@@ -1,0 +1,1 @@
+ALTER TABLE schedule_items ADD COLUMN IF NOT EXISTS maps_url text NOT NULL DEFAULT '';

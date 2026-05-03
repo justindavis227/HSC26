@@ -25,6 +25,7 @@ export interface ScheduleItem {
   time: string;
   activity: string;
   location: string;
+  maps_url: string;
   sort_order: number;
   created_at?: string;
 }

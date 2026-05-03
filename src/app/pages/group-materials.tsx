@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { campData } from '../data/camp-data';
 import { Card } from '../components/ui/card';
-import { FolderOpen, CheckCircle, Info, ArrowRight, Users, ClipboardList, ExternalLink, Images } from 'lucide-react';
+import { FolderOpen, CheckCircle, Info, ArrowRight, Users, ClipboardList, ExternalLink, Layers, MessageCircle } from 'lucide-react';
 import { Link } from 'react-router';
 import { supabase } from '../../lib/supabase';
 import { usePageTitle } from '../hooks/use-page-title';
@@ -108,12 +108,14 @@ export function GroupMaterialsPage() {
         <Link to="/group-cards">
           <Card className="p-6 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <Images className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg">Group Cards</h3>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Layers className="w-6 h-6 text-primary" />
                 </div>
-                <p className="text-sm text-muted-foreground">Daily group activity cards</p>
+                <div>
+                  <h3 className="text-lg">Group Cards</h3>
+                  <p className="text-sm text-muted-foreground">Daily group activity cards</p>
+                </div>
               </div>
               <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />
             </div>
@@ -123,11 +125,16 @@ export function GroupMaterialsPage() {
         <Link to="/decision-guide">
           <Card className="p-6 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group">
             <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg mb-1">Decision Guide</h3>
-                <p className="text-sm text-muted-foreground">
-                  A guide for leaders to help students as they make decisions for Christ
-                </p>
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <MessageCircle className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg mb-1">Decision Guide</h3>
+                  <p className="text-sm text-muted-foreground">
+                    A guide for leaders to help students as they make decisions for Christ
+                  </p>
+                </div>
               </div>
               <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />
             </div>

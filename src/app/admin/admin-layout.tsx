@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { NavLink, Outlet, Navigate, useNavigate } from 'react-router';
+import { LayoutDashboard, Bell, Calendar, MapPin, Map, Info, Users, Trophy, Phone, HelpCircle, LogOut, ArrowLeft, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/auth-context';
 
-const navItems = [
-  { path: '/admin',                label: 'Dashboard',    icon: '📊', end: true },
-  { path: '/admin/announcements',  label: 'Announcements', icon: '📢' },
-  { path: '/admin/schedule',       label: 'Schedule',     icon: '📅' },
-  { path: '/admin/campus-times',   label: 'Campus Info',  icon: '🏫' },
-  { path: '/admin/camp-map',       label: 'Camp Map',     icon: '🗺️' },
-  { path: '/admin/sessions',       label: 'Sessions',     icon: '🎤' },
-  { path: '/admin/groups',         label: 'Groups',       icon: '👥' },
-  { path: '/admin/activities',     label: 'Activities',   icon: '🏆' },
-  { path: '/admin/contacts',       label: 'Contact Info', icon: '📞' },
-  { path: '/admin/faq',            label: 'FAQ',          icon: '❓' },
+const navItems: { path: string; label: string; icon: LucideIcon; end?: boolean }[] = [
+  { path: '/admin',                label: 'Dashboard',    icon: LayoutDashboard, end: true },
+  { path: '/admin/announcements',  label: 'Announcements', icon: Bell },
+  { path: '/admin/schedule',       label: 'Schedule',     icon: Calendar },
+  { path: '/admin/campus-times',   label: 'Campus Info',  icon: MapPin },
+  { path: '/admin/camp-map',       label: 'Camp Map',     icon: Map },
+  { path: '/admin/sessions',       label: 'Sessions',     icon: Info },
+  { path: '/admin/groups',         label: 'Groups',       icon: Users },
+  { path: '/admin/activities',     label: 'Activities',   icon: Trophy },
+  { path: '/admin/contacts',       label: 'Contact Info', icon: Phone },
+  { path: '/admin/faq',            label: 'FAQ',          icon: HelpCircle },
 ];
 
 export function AdminLayout() {
@@ -62,24 +63,27 @@ export function AdminLayout() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              end={item.end}
-              onClick={() => setSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-[var(--primary)]/10 text-[var(--primary)]'
-                    : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
-                }`
-              }
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </NavLink>
-          ))}
+          {navItems.map(item => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.end}
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-[var(--primary)]/10 text-[var(--primary)]'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                  }`
+                }
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+                {item.label}
+              </NavLink>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-gray-200 dark:border-gray-800">
@@ -88,14 +92,14 @@ export function AdminLayout() {
             onClick={handleSignOut}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
           >
-            <span>🚪</span>
+            <LogOut className="w-4 h-4 shrink-0" />
             Sign Out
           </button>
           <NavLink
             to="/"
             className="mt-1 w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
           >
-            <span>←</span>
+            <ArrowLeft className="w-4 h-4 shrink-0" />
             Back to App
           </NavLink>
         </div>

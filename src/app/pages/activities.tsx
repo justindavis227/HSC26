@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Trophy, MapPin, Users } from 'lucide-react';
+import { Trophy, MapPin, Users, CircleDot, Circle, Zap, Gamepad2, Layers, Grid3x3, Crown, type LucideIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Tournament, Elective } from '../../lib/supabase';
 import { usePageTitle } from '../hooks/use-page-title';
@@ -21,6 +21,23 @@ const THEME_COLORS: Record<string, string> = {
   Evangelism:    'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300',
   Miscellaneous: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
 };
+
+function getTournamentIcon(activity: string): LucideIcon {
+  const n = activity.toLowerCase();
+  if (n.includes('volleyball'))  return CircleDot;
+  if (n.includes('soccer'))      return CircleDot;
+  if (n.includes('basketball'))  return Circle;
+  if (n.includes('dodgeball'))   return Zap;
+  if (n.includes('smash'))       return Gamepad2;
+  if (n.includes('rocket'))      return Gamepad2;
+  if (n.includes('mario'))       return Gamepad2;
+  if (n.includes('uno'))         return Layers;
+  if (n.includes('bingo'))       return Grid3x3;
+  if (n.includes('nertz'))       return Layers;
+  if (n.includes('chess'))       return Crown;
+  if (n.includes('champion'))    return Trophy;
+  return Trophy;
+}
 
 // DO NOT append dates to day tab labels — show day names only.
 function TournamentsView() {
@@ -54,14 +71,17 @@ function TournamentsView() {
                 <p className="text-muted-foreground text-sm">No tournaments listed for {day}.</p>
               </Card>
             )}
-            {dayItems.map(item => (
-              <Card key={item.id} className="p-4">
-                <div className="flex items-center gap-3">
-                  <Trophy className="w-4 h-4 text-primary flex-shrink-0" />
-                  <span className="text-sm font-medium">{item.activity}</span>
-                </div>
-              </Card>
-            ))}
+            {dayItems.map(item => {
+              const Icon = getTournamentIcon(item.activity);
+              return (
+                <Card key={item.id} className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Icon className="w-4 h-4 text-primary flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.activity}</span>
+                  </div>
+                </Card>
+              );
+            })}
           </TabsContent>
         );
       })}

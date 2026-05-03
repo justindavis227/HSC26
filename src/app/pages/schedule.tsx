@@ -87,38 +87,33 @@ export function SchedulePage() {
               <TabsContent key={day} value={day} className="space-y-2 mt-6">
                 {dayItems.map((item) => (
                   <Card key={item.id} className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Clock className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start gap-2">
-                          <span className="text-sm font-medium text-primary whitespace-nowrap">{item.time}</span>
-                          {item.activity === 'Afternoon Activities' ? (
-                            <Link to="/activities" className="text-sm text-primary underline underline-offset-2 hover:opacity-75 transition-opacity">
-                              {item.activity}
-                            </Link>
-                          ) : (
-                            <span className="text-sm">{item.activity}</span>
-                          )}
-                        </div>
-                        {item.location && (
-                          <div className="flex items-center gap-1 mt-2 text-muted-foreground">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            {item.maps_url ? (
-                              <a
-                                href={item.maps_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs text-primary underline underline-offset-2 hover:opacity-75 transition-opacity"
-                              >
-                                {item.location}
-                              </a>
-                            ) : (
-                              <span className="text-xs">{item.location}</span>
-                            )}
-                          </div>
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium text-primary whitespace-nowrap">{item.time}</span>
+                      {item.activity === 'Afternoon Activities' ? (
+                        <Link to="/activities" className="text-sm text-primary underline underline-offset-2 hover:opacity-75 transition-opacity">
+                          {item.activity}
+                        </Link>
+                      ) : (
+                        <span className="text-sm">{item.activity}</span>
+                      )}
+                    </div>
+                    {item.location && (
+                      <div className="flex items-center gap-1 mt-2 text-muted-foreground">
+                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                        {item.maps_url ? (
+                          <a
+                            href={item.maps_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-primary underline underline-offset-2 hover:opacity-75 transition-opacity"
+                          >
+                            {item.location}
+                          </a>
+                        ) : (
+                          <span className="text-xs">{item.location}</span>
                         )}
                       </div>
-                    </div>
+                    )}
                   </Card>
                 ))}
               </TabsContent>

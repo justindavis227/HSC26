@@ -125,7 +125,7 @@ const THEMES = ['Jesus', 'Prayer', 'Bible', 'Serving', 'Evangelism', 'Miscellane
 const THEME_ORDER: Record<string, number> = { Jesus: 1, Prayer: 2, Bible: 3, Serving: 4, Evangelism: 5, Miscellaneous: 6 };
 
 type EForm = Omit<Elective, 'id' | 'updated_at' | 'day_order' | 'slot_order' | 'theme_order'>;
-const emptyE: EForm = { day: E_DAYS[0], time_slot: '1:30-2:30', theme: 'Jesus', title: '', speaker: '', location: '' };
+const emptyE: EForm = { day: E_DAYS[0], time_slot: '1:30-2:30', theme: 'Jesus', title: '', speaker: '', location: '', maps_url: '' };
 
 function ElectivesEditor() {
   const [filterDay, setFilterDay] = useState(E_DAYS[0]);
@@ -149,7 +149,7 @@ function ElectivesEditor() {
   function startNew() { setEditing(null); setForm({ ...emptyE, day: filterDay }); setError(''); }
   function startEdit(item: Elective) {
     setEditing(item);
-    setForm({ day: item.day, time_slot: item.time_slot, theme: item.theme, title: item.title, speaker: item.speaker, location: item.location });
+    setForm({ day: item.day, time_slot: item.time_slot, theme: item.theme, title: item.title, speaker: item.speaker, location: item.location, maps_url: item.maps_url ?? '' });
     setError('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -216,7 +216,21 @@ function ElectivesEditor() {
         <div className="space-y-3 mb-4">
           {inp('Title *', 'title', 'Session title')}
           {inp('Speaker', 'speaker', 'Speaker name(s)')}
-          {inp('Location', 'location', 'e.g. Alumni Hall')}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {inp('Location', 'location', 'e.g. IMU: Alumni Hall')}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                Maps URL <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="url"
+                value={form.maps_url}
+                onChange={e => setForm(f => ({ ...f, maps_url: e.target.value }))}
+                placeholder="https://maps.google.com/…"
+                className={inputClass}
+              />
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={save} disabled={saving}
@@ -253,7 +267,12 @@ function ElectivesEditor() {
                 </div>
                 <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.title}</div>
                 {item.speaker && <div className="text-xs text-gray-500 truncate">{item.speaker}</div>}
-                {item.location && <div className="text-xs text-gray-400 truncate">{item.location}</div>}
+                {item.location && (
+                  <div className="text-xs text-gray-400 truncate">
+                    {item.location}
+                    {item.maps_url && <span className="ml-1 text-[var(--primary)]">↗</span>}
+                  </div>
+                )}
               </div>
               <div className="flex gap-1 shrink-0">
                 <button onClick={() => startEdit(item)} className="text-xs text-gray-400 hover:text-[var(--primary)] transition p-1">Edit</button>

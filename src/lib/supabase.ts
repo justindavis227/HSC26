@@ -77,6 +77,7 @@ export interface Elective {
   title: string;
   speaker: string;
   location: string;
+  maps_url: string;
   updated_at?: string;
 }
 

@@ -12,7 +12,68 @@ interface SearchResult {
   path: string;
 }
 
-const SECTION_ORDER = [
+// ─── Static page index ────────────────────────────────────────────────────────
+
+interface PageEntry {
+  id: string;
+  title: string;
+  description: string;
+  path: string;
+  keywords: string;
+}
+
+const PAGES: PageEntry[] = [
+  { id: 'page-home',          title: 'Dashboard',        description: 'Home, announcements, and camp guidelines',                path: '/',               keywords: 'home dashboard main announcements guidelines' },
+  { id: 'page-announcements', title: 'Announcements',    description: 'News, updates, and alerts',                              path: '/announcements',  keywords: 'announcements news updates alerts' },
+  { id: 'page-schedule',      title: 'Schedule',         description: 'Daily schedule and timing by campus',                    path: '/schedule',       keywords: 'schedule calendar daily timing activities week' },
+  { id: 'page-campus-info',   title: 'Campus Info',      description: 'Dorms, dining, locations, and small group zones',        path: '/campus-info',    keywords: 'campus info dorms dining location small group zones' },
+  { id: 'page-camp-map',      title: 'Camp Map',         description: 'Map and directions to campus locations',                 path: '/campus-map',     keywords: 'map directions location navigate' },
+  { id: 'page-sessions',      title: 'Sessions',         description: 'Speakers, seating chart, themes, and secret page',      path: '/session-info',   keywords: 'sessions speakers seating chart themes secret page' },
+  { id: 'page-speakers',      title: 'Session Speakers', description: 'Meet the speakers at camp this year',                   path: '/speakers',       keywords: 'speakers speaker talk message' },
+  { id: 'page-seating',       title: 'Seating Chart',    description: 'Where to sit in the session hall',                      path: '/seating-chart',  keywords: 'seating seats where to sit chart' },
+  { id: 'page-themes',        title: 'Daily Themes',     description: 'What to wear each day of camp',                         path: '/themes',         keywords: 'themes what to wear outfit dress neon western christmas july 4th' },
+  { id: 'page-secret',        title: 'Secret Page',      description: 'Find the clues to unlock this hidden page',             path: '/session-info',   keywords: 'secret hidden clues unlock' },
+  { id: 'page-groups',        title: 'Groups',           description: 'Group materials, roster, tracker, cards, decision guide', path: '/group-materials', keywords: 'groups group leader roster tracker cards decision guide' },
+  { id: 'page-group-cards',   title: 'Group Cards',      description: 'Daily group activity cards',                            path: '/group-cards',    keywords: 'group cards daily cards day 1 day 2 day 3 day 4 day 5' },
+  { id: 'page-decision',      title: 'Decision Guide',   description: 'Tool for leaders to help students make decisions for Christ', path: '/decision-guide', keywords: 'decision guide christ faith leader tool' },
+  { id: 'page-roster',        title: 'Student Roster',   description: "View your group's student list",                        path: '/group-materials', keywords: 'roster students list' },
+  { id: 'page-tracker',       title: 'Group Tracker',    description: 'Track attendance and activities',                       path: '/group-materials', keywords: 'tracker attendance tracking' },
+  { id: 'page-activities',    title: 'Activities',       description: 'Tournaments and electives for the week',                path: '/activities',     keywords: 'activities tournaments electives volleyball soccer basketball dodgeball smash mario kart rocket league bingo chess nertz uno' },
+  { id: 'page-tournaments',   title: 'Tournaments',      description: 'Sports and games competition',                          path: '/activities',     keywords: 'tournaments sports games competition championship' },
+  { id: 'page-electives',     title: 'Electives',        description: 'Elective classes by theme',                            path: '/activities',     keywords: 'electives classes jesus prayer bible serving evangelism miscellaneous' },
+  { id: 'page-contacts',      title: 'Contact Info',     description: 'Staff contacts, phone numbers, and email',              path: '/contacts',       keywords: 'contact contacts phone email staff coordinators help' },
+  { id: 'page-faq',           title: 'FAQ',              description: 'Frequently asked questions and answers',                path: '/faq',            keywords: 'faq questions answers help frequently asked' },
+];
+
+function filterPages(query: string): SearchResult[] {
+  const q = query.toLowerCase();
+  const matches = PAGES.filter(p =>
+    p.title.toLowerCase().includes(q) || p.keywords.includes(q)
+  );
+  // Exact title match first, then title-starts-with, then rest
+  matches.sort((a, b) => {
+    const aTitle = a.title.toLowerCase();
+    const bTitle = b.title.toLowerCase();
+    const aExact = aTitle === q;
+    const bExact = bTitle === q;
+    if (aExact !== bExact) return aExact ? -1 : 1;
+    const aStarts = aTitle.startsWith(q);
+    const bStarts = bTitle.startsWith(q);
+    if (aStarts !== bStarts) return aStarts ? -1 : 1;
+    return 0;
+  });
+  return matches.map(p => ({
+    id: p.id,
+    section: 'Pages',
+    title: p.title,
+    subtitle: p.description,
+    path: p.path,
+  }));
+}
+
+// ─── Supabase data fetch ──────────────────────────────────────────────────────
+
+const DB_SECTION_ORDER = [
   'Speakers', 'Announcements', 'Schedule', 'Electives',
   'Tournaments', 'FAQ', 'Contacts', 'Campus Info',
 ];
@@ -44,7 +105,6 @@ async function fetchAllData(): Promise<SearchResult[]> {
     results.push({ id: `ann-${a.id}`, section: 'Announcements', title: a.title, subtitle: a.content, path: '/announcements' });
   });
 
-  // Deduplicate schedule by activity name (same activity appears across campuses/days)
   const seenActivities = new Set<string>();
   (schedule ?? []).forEach(s => {
     if (!seenActivities.has(s.activity)) {
@@ -87,7 +147,6 @@ async function fetchAllData(): Promise<SearchResult[]> {
     results.push({ id: `cam-${c.id}`, section: 'Campus Info', title: c.campus_name, path: `/campus-info/${slug}` });
   });
 
-  // Deduplicate tournaments by activity name
   const seenTournaments = new Set<string>();
   (tournaments ?? []).forEach(t => {
     if (!seenTournaments.has(t.activity)) {
@@ -99,7 +158,7 @@ async function fetchAllData(): Promise<SearchResult[]> {
   return results;
 }
 
-function groupResults(allData: SearchResult[], query: string): Map<string, SearchResult[]> {
+function groupDbResults(allData: SearchResult[], query: string): Map<string, SearchResult[]> {
   const q = query.toLowerCase();
   const filtered = allData.filter(r =>
     r.title.toLowerCase().includes(q) || (r.subtitle ?? '').toLowerCase().includes(q)
@@ -110,11 +169,13 @@ function groupResults(allData: SearchResult[], query: string): Map<string, Searc
     map.get(r.section)!.push(r);
   }
   const sorted = new Map<string, SearchResult[]>();
-  for (const section of SECTION_ORDER) {
+  for (const section of DB_SECTION_ORDER) {
     if (map.has(section)) sorted.set(section, map.get(section)!.slice(0, 5));
   }
   return sorted;
 }
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export function SearchOverlay() {
   const { isOpen, close } = useSearch();
@@ -147,8 +208,35 @@ export function SearchOverlay() {
   if (!isOpen) return null;
 
   const hasQuery = query.length >= 2;
-  const grouped = hasQuery && allData ? groupResults(allData, query) : new Map<string, SearchResult[]>();
-  const totalCount = Array.from(grouped.values()).reduce((n, arr) => n + arr.length, 0);
+  const pageResults = hasQuery ? filterPages(query) : [];
+  const dbGrouped = hasQuery && allData ? groupDbResults(allData, query) : new Map<string, SearchResult[]>();
+  const dbCount = Array.from(dbGrouped.values()).reduce((n, arr) => n + arr.length, 0);
+  const totalCount = pageResults.length + dbCount;
+
+  function ResultRow({ item }: { item: SearchResult }) {
+    return (
+      <button
+        onClick={() => handleSelect(item.path)}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
+      >
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+          {item.subtitle && (
+            <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.subtitle}</p>
+          )}
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+      </button>
+    );
+  }
+
+  function SectionHeader({ label }: { label: string }) {
+    return (
+      <div className="px-4 pt-5 pb-1.5">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{label}</span>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
@@ -197,26 +285,19 @@ export function SearchOverlay() {
 
         {!loading && totalCount > 0 && (
           <div className="pb-8">
-            {Array.from(grouped.entries()).map(([section, items]) => (
+            {/* Pages — always first */}
+            {pageResults.length > 0 && (
+              <div>
+                <SectionHeader label="Pages" />
+                {pageResults.map(item => <ResultRow key={item.id} item={item} />)}
+              </div>
+            )}
+
+            {/* Database content sections */}
+            {Array.from(dbGrouped.entries()).map(([section, items]) => (
               <div key={section}>
-                <div className="px-4 pt-5 pb-1.5">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{section}</span>
-                </div>
-                {items.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => handleSelect(item.path)}
-                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-accent transition-colors text-left"
-                  >
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                      {item.subtitle && (
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.subtitle}</p>
-                      )}
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                  </button>
-                ))}
+                <SectionHeader label={section} />
+                {items.map(item => <ResultRow key={item.id} item={item} />)}
               </div>
             ))}
           </div>

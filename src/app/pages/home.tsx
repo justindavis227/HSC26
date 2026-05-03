@@ -1,5 +1,5 @@
 import { Card } from '../components/ui/card';
-import { Bell, Search } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { Link } from 'react-router';
 import { WeatherWidget } from '../components/weather-widget';
 import { InstallBanner } from '../components/install-banner';
@@ -8,7 +8,6 @@ import { getUnreadCount } from '../utils/announcement-tracker';
 import { localDateString } from '../utils/date';
 import { supabase } from '../../lib/supabase';
 import type { Announcement } from '../../lib/supabase';
-import { useSearch } from '../context/search-context';
 
 const DASHBOARD_KEYS = [
   'dashboard_title',
@@ -34,7 +33,6 @@ const DEFAULTS: Record<string, string> = {
 
 export function HomePage() {
   const today = localDateString();
-  const { open: openSearch } = useSearch();
   const [todayAnnouncements, setTodayAnnouncements] = useState<Announcement[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [config, setConfig] = useState<Record<string, string>>(DEFAULTS);
@@ -88,15 +86,6 @@ export function HomePage() {
         <h1>{config.dashboard_title}</h1>
         <p className="text-muted-foreground mt-1">{config.dashboard_subtitle}</p>
       </div>
-
-      {/* Search shortcut */}
-      <button
-        onClick={openSearch}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-border bg-card text-muted-foreground hover:border-primary hover:text-foreground transition-colors"
-      >
-        <Search className="w-4 h-4 shrink-0" />
-        <span className="text-sm">Search for anything…</span>
-      </button>
 
       <div>
         <div className="flex items-center gap-2 mb-4">

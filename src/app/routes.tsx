@@ -28,7 +28,9 @@ import { AdminFAQ } from './admin/faq';
 import { AdminCampInfo } from './admin/camp-info';
 import { AdminCampusTimes } from './admin/campus-times';
 import { AdminActivities } from './admin/activities';
+import { AdminGroups } from './admin/groups';
 import { ActivitiesPage } from './pages/activities';
+import { GroupCardsPage } from './pages/group-cards';
 
 export const navigationItems = [
   { path: '/', label: 'Dashboard', icon: Home },
@@ -61,6 +63,7 @@ export const router = createBrowserRouter([
       { path: 'camp-info', element: <AdminCampInfo /> },
       { path: 'campus-times', element: <AdminCampusTimes /> },
       { path: 'activities', element: <AdminActivities /> },
+      { path: 'groups',     element: <AdminGroups /> },
     ],
   },
 
@@ -74,6 +77,7 @@ export const router = createBrowserRouter([
       { path: 'schedule', element: <SchedulePage /> },
       { path: 'campus-map', element: <CampusMapPage /> },
       { path: 'group-materials', element: <GroupMaterialsPage /> },
+      { path: 'group-cards',     element: <GroupCardsPage /> },
       { path: 'decision-guide', element: <DecisionGuidePage /> },
       { path: 'session-info', element: <SessionInfoPage /> },
       { path: 'seating-chart', element: <SeatingChartPage /> },

@@ -1,27 +1,28 @@
+import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/card';
 import { Link } from 'react-router';
-import { ArrowLeft, MessageCircle, FileText, ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowLeft, MessageCircle, FileText, ArrowRight, ExternalLink, Download, Image } from 'lucide-react';
 import { Button } from '../components/ui/button';
+import { supabase } from '../../lib/supabase';
+
+interface DGItem { id: number; sort_order: number; title: string; file_url: string; file_name: string; }
+
+function isPdf(name: string) { return (name ?? '').toLowerCase().endsWith('.pdf'); }
+
+const nextStepsOptions = [
+  { title: '33 Things Study',         description: 'A study to take new believers through after they decide to follow Jesus!' },
+  { title: 'Find a Way to Serve',     description: 'An opportunity to begin serving and developing a lifestyle of being a Kingdom Worker!' },
+  { title: 'Lead in MSM / SE!KIDS',   description: 'A step in beginning to make disciples of those a little further behind you!' },
+  { title: 'Lead in HSM This Fall!',  description: 'Continue the relationships you formed at camp and keeping journeying together!' },
+];
 
 export function DecisionGuidePage() {
-  const nextStepsOptions = [
-    {
-      title: '33 Things Study',
-      description: 'A study to take new believers through after they decide to follow Jesus!',
-    },
-    {
-      title: 'Find a Way to Serve',
-      description: 'An opportunity to begin serving and developing a lifestyle of being a Kingdom Worker!',
-    },
-    {
-      title: 'Lead in MSM / SE!KIDS',
-      description: 'A step in beginning to make disciples of those a little further behind you!',
-    },
-    {
-      title: 'Lead in HSM This Fall!',
-      description: 'Continue the relationships you formed at camp and keeping journeying together!',
-    },
-  ];
+  const [resources, setResources] = useState<DGItem[]>([]);
+
+  useEffect(() => {
+    supabase.from('decision_guide').select('id,sort_order,title,file_url,file_name').order('sort_order')
+      .then(({ data }) => setResources(data ?? []));
+  }, []);
 
   return (
     <div className="p-6 space-y-8">
@@ -55,12 +56,8 @@ export function DecisionGuidePage() {
           </div>
         </div>
         <div className="mt-4 pl-16">
-          <a
-            href="/Baptism_Guide.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-          >
+          <a href="/Baptism_Guide.pdf" target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
             <FileText className="w-4 h-4" />
             Baptism Guide (PDF)
             <ExternalLink className="w-3 h-3" />
@@ -97,12 +94,8 @@ export function DecisionGuidePage() {
           </div>
         </div>
         <div className="mt-4 pl-16">
-          <a
-            href="https://my.southeastchristian.org/decided"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-          >
+          <a href="https://my.southeastchristian.org/decided" target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
             Decision Form
             <ExternalLink className="w-4 h-4" />
           </a>
@@ -139,17 +132,47 @@ export function DecisionGuidePage() {
         <p className="text-sm text-muted-foreground mb-3">
           Could be a great next step to get them engaged with the implications of our salvation! Great for new, growing, or stalled out believers.
         </p>
-        <a
-          href="https://resv2.craft.do/user/full/62f38b26-fcea-9762-55e6-2a72319dad67/doc/6C625550-61F1-4D71-ACD2-0E5EBD392B47/2654eedc-f580-304f-8b7d-d858c51b9c92"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors"
-        >
+        <a href="https://resv2.craft.do/user/full/62f38b26-fcea-9762-55e6-2a72319dad67/doc/6C625550-61F1-4D71-ACD2-0E5EBD392B47/2654eedc-f580-304f-8b7d-d858c51b9c92"
+          target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary/20 transition-colors">
           <FileText className="w-4 h-4" />
           33 Things Booklet (PDF)
           <ExternalLink className="w-3 h-3" />
         </a>
       </Card>
+
+      {/* Admin-uploaded resources */}
+      {resources.length > 0 && (
+        <div>
+          <h2 className="text-xl mb-4">Resources</h2>
+          <div className="space-y-3">
+            {resources.map(item => (
+              <Card key={item.id} className="p-5 flex items-center gap-4">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isPdf(item.file_name) ? 'bg-red-50 dark:bg-red-950' : 'bg-blue-50 dark:bg-blue-950'}`}>
+                  {isPdf(item.file_name)
+                    ? <FileText className="w-5 h-5 text-red-500" />
+                    : <Image className="w-5 h-5 text-blue-500" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold">{item.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.file_name}</p>
+                </div>
+                {isPdf(item.file_name) ? (
+                  <a href={item.file_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition shrink-0">
+                    <Download className="w-4 h-4" />View
+                  </a>
+                ) : (
+                  <a href={item.file_url} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary text-sm font-semibold rounded-lg hover:bg-primary/20 transition shrink-0">
+                    View ↗
+                  </a>
+                )}
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

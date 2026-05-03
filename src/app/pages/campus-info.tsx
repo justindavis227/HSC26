@@ -7,7 +7,7 @@ import { usePageTitle } from '../hooks/use-page-title';
 export function CampusInfoPage() {
   const { title, subtitle } = usePageTitle('campus_info', {
     title: 'Campus Information',
-    subtitle: "What's happening at your campus!?",
+    subtitle: 'Check out your Campus Info (Location, Dining, Campus Time, Dorms, Group Zones)',
   });
 
   return (
@@ -20,7 +20,7 @@ export function CampusInfoPage() {
       <div>
         <div className="flex items-center gap-2 mb-4">
           <Building2 className="w-5 h-5 text-primary" />
-          <h2>Church Campuses</h2>
+          <h2>Campuses</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {campData.campuses.map((campus, index) => {

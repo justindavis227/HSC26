@@ -17,8 +17,8 @@ export function SchedulePage() {
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { title, subtitle } = usePageTitle('schedule', {
-    title: 'Weekly Schedule',
-    subtitle: 'Daily activities and timing for each day of the week',
+    title: 'Schedule',
+    subtitle: 'Select your campus for your specific schedule',
   });
 
   const campusNames = campusSchedules.map((c) => c.name);

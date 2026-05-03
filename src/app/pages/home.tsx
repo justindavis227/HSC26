@@ -2,6 +2,7 @@ import { Card } from '../components/ui/card';
 import { Bell } from 'lucide-react';
 import { Link } from 'react-router';
 import { WeatherWidget } from '../components/weather-widget';
+import { InstallBanner } from '../components/install-banner';
 import { useState, useEffect } from 'react';
 import { getUnreadCount } from '../utils/announcement-tracker';
 import { localDateString } from '../utils/date';
@@ -104,6 +105,7 @@ export function HomePage() {
         </div>
       </Card>
 
+      <InstallBanner />
     </div>
   );
 }

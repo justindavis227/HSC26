@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AdminSpeakers } from './speakers';
 import { AdminThemes } from './themes-editor';
 import { AdminSeatingCharts } from './seating-charts';
+import { PageTitleEditor } from './page-title-editor';
 
 type Subpage = 'speakers' | 'themes' | 'seating-chart' | 'secret-page';
 
@@ -17,10 +18,12 @@ export function AdminSessions() {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sessions</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage session-related content</p>
       </div>
+
+      <PageTitleEditor pageKey="sessions" />
 
       {/* Subpage selector */}
       <div className="flex flex-wrap gap-2 mb-6">

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Upload, X, FileText, Image, Plus, GripVertical } from 'lucide-react';
+import { PageTitleEditor } from './page-title-editor';
 
 // ── shared helpers ────────────────────────────────────────────────────────────
 
@@ -306,10 +307,12 @@ export function AdminGroups() {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Groups</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage group materials, links, and resources</p>
       </div>
+
+      <PageTitleEditor pageKey="groups" />
       <div className="flex flex-wrap gap-2 mb-6">
         {SUBPAGES.map(({ id, label }) => (
           <button key={id} onClick={() => setSubpage(id)}

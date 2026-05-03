@@ -5,12 +5,17 @@ import { Bell, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { markAllAnnouncementsAsRead } from '../utils/announcement-tracker';
 import { localDateString } from '../utils/date';
+import { usePageTitle } from '../hooks/use-page-title';
 
 export function AnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
+  const { title, subtitle } = usePageTitle('announcements', {
+    title: 'Daily Announcements',
+    subtitle: 'Stay updated with the latest camp news and important information',
+  });
 
   useEffect(() => {
     async function load() {
@@ -116,10 +121,8 @@ export function AnnouncementsPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>Daily Announcements</h1>
-        <p className="text-muted-foreground mt-1">
-          Stay updated with the latest camp news and important information
-        </p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       {todayAnnouncements.length > 0 && (

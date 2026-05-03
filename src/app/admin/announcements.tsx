@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Announcement } from '../../lib/supabase';
 import { localDateString } from '../utils/date';
+import { PageTitleEditor } from './page-title-editor';
 
 const empty: Omit<Announcement, 'id' | 'created_at'> = {
   date: localDateString(),
@@ -75,12 +76,14 @@ export function AdminAnnouncements() {
 
   return (
     <div className="max-w-3xl">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Announcements</h1>
         <button onClick={startNew} className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition">
           + New
         </button>
       </div>
+
+      <PageTitleEditor pageKey="announcements" />
 
       {/* Form */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6">

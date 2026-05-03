@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageTitleEditor } from './page-title-editor';
 import {
   DndContext,
   closestCenter,
@@ -291,6 +292,8 @@ export function AdminSchedule() {
 
   return (
     <div className="max-w-4xl">
+      <PageTitleEditor pageKey="schedule" />
+
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Schedule</h1>
         <div className="flex gap-2">

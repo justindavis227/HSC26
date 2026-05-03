@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '../components/ui/card';
 import { Mail, Phone, Clock, User } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { usePageTitle } from '../hooks/use-page-title';
 
 interface Contact {
   id: number;
@@ -16,6 +17,10 @@ interface Contact {
 export function ContactsPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading]   = useState(true);
+  const { title, subtitle } = usePageTitle('contacts', {
+    title: 'Contact Information',
+    subtitle: 'Get in touch with camp staff and coordinators',
+  });
 
   useEffect(() => {
     supabase.from('contacts').select('*').order('sort_order').then(({ data }) => {
@@ -27,8 +32,8 @@ export function ContactsPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>Contact Information</h1>
-        <p className="text-muted-foreground mt-1">Get in touch with camp staff and coordinators</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       {loading ? (

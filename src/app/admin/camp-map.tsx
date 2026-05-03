@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Upload, X, FileText, Image } from 'lucide-react';
+import { PageTitleEditor } from './page-title-editor';
 
 type MapMode = 'embed' | 'file';
 
@@ -80,10 +81,12 @@ export function AdminCampMap() {
 
   return (
     <div className="max-w-2xl">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Camp Map</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Choose how the map appears on the live Camp Map page.</p>
       </div>
+
+      <PageTitleEditor pageKey="camp_map" />
 
       {/* Mode toggle */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-4">

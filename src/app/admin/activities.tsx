@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Tournament, Elective } from '../../lib/supabase';
+import { PageTitleEditor } from './page-title-editor';
 
 // ─── Tournaments ────────────────────────────────────────────────────────────
 
@@ -302,10 +303,12 @@ export function AdminActivities() {
 
   return (
     <div className="max-w-4xl">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Activities</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage tournaments and electives</p>
       </div>
+
+      <PageTitleEditor pageKey="activities" />
 
       <div className="flex gap-2 mb-6">
         {TABS.map(({ id, label }) => (

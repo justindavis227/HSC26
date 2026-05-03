@@ -7,15 +7,19 @@ import { supabase } from '../../lib/supabase';
 import type { ScheduleItem } from '../../lib/supabase';
 import { useCampus } from '../context/campus-context';
 import { campusSchedules } from '../data/campus-schedules';
-import { useCampDates } from '../hooks/use-camp-dates';
+import { usePageTitle } from '../hooks/use-page-title';
 
+// DO NOT append dates to day labels — days must always display as Monday/Tuesday/Wednesday/Thursday/Friday only.
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export function SchedulePage() {
   const { selectedCampus, setSelectedCampus } = useCampus();
   const [items, setItems] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const { dayLabel } = useCampDates();
+  const { title, subtitle } = usePageTitle('schedule', {
+    title: 'Weekly Schedule',
+    subtitle: 'Daily activities and timing for each day of the week',
+  });
 
   const campusNames = campusSchedules.map((c) => c.name);
 
@@ -39,8 +43,8 @@ export function SchedulePage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>Weekly Schedule</h1>
-        <p className="text-muted-foreground mt-1">Daily activities and timing for each day of the week</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       <div className="relative">
@@ -70,7 +74,8 @@ export function SchedulePage() {
             <TabsList className="inline-flex w-full min-w-max">
               {days.map((day) => (
                 <TabsTrigger key={day} value={day} className="flex-1 min-w-[80px] text-xs sm:text-sm px-3">
-                  {dayLabel(day)}
+                  {/* DO NOT append dates here — show day name only */}
+                  {day}
                 </TabsTrigger>
               ))}
             </TabsList>

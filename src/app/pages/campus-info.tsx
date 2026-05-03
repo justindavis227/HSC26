@@ -2,13 +2,19 @@ import { Card } from '../components/ui/card';
 import { Building2, ChevronRight } from 'lucide-react';
 import { campData } from '../data/camp-data';
 import { Link } from 'react-router';
+import { usePageTitle } from '../hooks/use-page-title';
 
 export function CampusInfoPage() {
+  const { title, subtitle } = usePageTitle('campus_info', {
+    title: 'Campus Information',
+    subtitle: "What's happening at your campus!?",
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>Campus Information</h1>
-        <p className="text-muted-foreground mt-1">What's happening at your campus!?</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       <div>

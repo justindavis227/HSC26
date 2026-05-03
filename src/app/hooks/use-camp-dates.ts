@@ -23,14 +23,14 @@ export function useCampDates() {
     return new Date(y, m - 1, d + idx);
   }
 
-  // "Monday Jun 29"
+  // DO NOT append dates to day labels — days must always display as Monday/Tuesday/Wednesday/Thursday/Friday only.
+  // These functions exist for date math only; never use them for tab labels or day headings in the UI.
   function dayLabel(day: string): string {
     const date = getDate(day);
     if (!date) return day;
     return `${day} ${date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
   }
 
-  // "Mon Jun 29"
   function shortDayLabel(day: string): string {
     const date = getDate(day);
     if (!date) return day.slice(0, 3);

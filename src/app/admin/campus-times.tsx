@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import type { CampusTime } from '../../lib/supabase';
 import { campData } from '../data/camp-data';
 import { Upload, X, FileText, Image } from 'lucide-react';
+import { PageTitleEditor } from './page-title-editor';
 
 const CAMPUSES = campData.campuses.map((c) => c.name);
 
@@ -209,12 +210,14 @@ export function AdminCampusTimes() {
 
   return (
     <div className="max-w-3xl">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Campus Info</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
           Edit campus details. Changes are live in the app immediately after saving.
         </p>
       </div>
+
+      <PageTitleEditor pageKey="campus_info" />
 
       {/* Campus selector */}
       <div className="mb-5">

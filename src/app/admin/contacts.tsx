@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import { PageTitleEditor } from './page-title-editor';
 
 interface Contact {
   id: number;
@@ -81,10 +82,12 @@ export function AdminContacts() {
 
   return (
     <div className="max-w-2xl">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Contact Info</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage camp staff contacts shown on the live Contact Info page.</p>
       </div>
+
+      <PageTitleEditor pageKey="contacts" />
 
       {/* Form */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6">

@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Trophy, MapPin, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Tournament, Elective } from '../../lib/supabase';
-import { useCampDates } from '../hooks/use-camp-dates';
+import { usePageTitle } from '../hooks/use-page-title';
 
 const TOURNAMENT_DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 // DB values for electives day field — must match exactly
@@ -22,7 +22,8 @@ const THEME_COLORS: Record<string, string> = {
   Miscellaneous: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300',
 };
 
-function TournamentsView({ shortDayLabel }: { shortDayLabel: (day: string) => string }) {
+// DO NOT append dates to day tab labels — show day names only.
+function TournamentsView() {
   const [items, setItems] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +40,7 @@ function TournamentsView({ shortDayLabel }: { shortDayLabel: (day: string) => st
         <TabsList className="inline-flex w-full min-w-max">
           {TOURNAMENT_DAYS.map(day => (
             <TabsTrigger key={day} value={day} className="flex-1 min-w-[70px] text-xs sm:text-sm px-3">
-              {shortDayLabel(day)}
+              {day}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -68,7 +69,7 @@ function TournamentsView({ shortDayLabel }: { shortDayLabel: (day: string) => st
   );
 }
 
-function ElectivesView({ shortDayLabel }: { shortDayLabel: (day: string) => string }) {
+function ElectivesView() {
   const [items, setItems] = useState<Elective[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -85,7 +86,7 @@ function ElectivesView({ shortDayLabel }: { shortDayLabel: (day: string) => stri
         <TabsList className="inline-flex w-full min-w-max">
           {ELECTIVE_DAYS.map((day, i) => (
             <TabsTrigger key={day} value={day} className="flex-1 min-w-[90px] text-xs px-2">
-              {shortDayLabel(ELECTIVE_WEEK_DAYS[i])}
+              {ELECTIVE_WEEK_DAYS[i]}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -156,13 +157,16 @@ function ElectivesView({ shortDayLabel }: { shortDayLabel: (day: string) => stri
 
 export function ActivitiesPage() {
   const [tab, setTab] = useState<'tournaments' | 'electives'>('tournaments');
-  const { shortDayLabel } = useCampDates();
+  const { title, subtitle } = usePageTitle('activities', {
+    title: 'Activities',
+    subtitle: 'Tournaments and electives for the week',
+  });
 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>Activities</h1>
-        <p className="text-muted-foreground mt-1">Tournaments and electives for the week</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       <div className="flex gap-2">
@@ -181,8 +185,8 @@ export function ActivitiesPage() {
         ))}
       </div>
 
-      {tab === 'tournaments' && <TournamentsView shortDayLabel={shortDayLabel} />}
-      {tab === 'electives'   && <ElectivesView shortDayLabel={shortDayLabel} />}
+      {tab === 'tournaments' && <TournamentsView />}
+      {tab === 'electives'   && <ElectivesView />}
     </div>
   );
 }

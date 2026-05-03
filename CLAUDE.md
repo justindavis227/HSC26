@@ -123,6 +123,25 @@ Vercel config: none required — Vite SPA routing needs `vercel.json`:
 
 Schedule items in the `schedule_items` Supabase table **always use generic day names**: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`. Never use specific dates (e.g. "Mon Jun 29") as the `day` field value. Actual calendar dates are stored separately in `camp_info` as `camp_start_date` / `camp_end_date` and are computed at render time in `schedule.tsx`. This convention must be preserved in all future imports, seeds, and migrations.
 
+## Day Label Convention — NEVER APPEND DATES TO DAY NAMES
+
+**Day tabs and headings throughout the app must always display the plain day name only: `Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`.** Never append a date to a day label (e.g. never show "Monday Jun 29" or "Tue Jun 30" in the UI).
+
+- The `useCampDates` hook's `dayLabel()` and `shortDayLabel()` functions compute dates for internal logic only. **Never pass their output to tab labels, section headings, or any user-visible day display.**
+- Anywhere a day name is rendered in a tab trigger, heading, or list label: use the raw day string directly (`{day}`, `{DAYS[i]}`, etc.).
+- This applies to: Schedule tabs, Activities (Tournaments + Electives) tabs, Seating Chart headers, Themes admin labels, and any future day-based UI.
+
+## Page Titles & Subtitles
+
+Every public-facing page has an editable title and subtitle stored in `camp_info` as key/value pairs:
+- `page_title_<key>` — the page's `<h1>` text
+- `page_subtitle_<key>` — the paragraph below the title
+
+Keys: `announcements`, `schedule`, `campus_info`, `camp_map`, `sessions`, `groups`, `activities`, `contacts`, `faq`.
+
+Live pages use `usePageTitle(key, defaults)` from `src/app/hooks/use-page-title.ts`.
+Admin pages include `<PageTitleEditor pageKey="..." />` from `src/app/admin/page-title-editor.tsx`.
+
 ## Secret Page
 
 Password: `JeFFerSON` (9 chars). Change in `src/app/components/password-modal.tsx` → `CORRECT_PASSWORD`.

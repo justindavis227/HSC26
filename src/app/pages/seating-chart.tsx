@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Armchair, FileText, Download } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { supabase } from '../../lib/supabase';
-import { useCampDates } from '../hooks/use-camp-dates';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
@@ -20,7 +19,6 @@ function isPdf(fileName: string) {
 export function SeatingChartPage() {
   const [charts, setCharts] = useState<Record<string, SeatingChart>>({});
   const [loading, setLoading] = useState(true);
-  const { dayLabel } = useCampDates();
 
   useEffect(() => {
     supabase
@@ -63,7 +61,7 @@ export function SeatingChartPage() {
         const chart = charts[day];
         return (
           <div key={day}>
-            <h2 className="text-base font-semibold mb-3">{dayLabel(day)}</h2>
+            <h2 className="text-base font-semibold mb-3">{day}</h2>
             {isPdf(chart.file_name) ? (
               <Card className="p-5 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-950 flex items-center justify-center shrink-0">

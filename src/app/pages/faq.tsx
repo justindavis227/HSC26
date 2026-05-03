@@ -2,10 +2,15 @@ import { useState, useEffect } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../components/ui/accordion';
 import { supabase } from '../../lib/supabase';
 import type { FAQ } from '../../lib/supabase';
+import { usePageTitle } from '../hooks/use-page-title';
 
 export function FAQPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [loading, setLoading] = useState(true);
+  const { title, subtitle } = usePageTitle('faq', {
+    title: 'Frequently Asked Questions',
+    subtitle: 'Find answers to common questions about camp',
+  });
 
   useEffect(() => {
     supabase
@@ -18,8 +23,8 @@ export function FAQPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>Frequently Asked Questions</h1>
-        <p className="text-muted-foreground mt-1">Find answers to common questions about camp</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       <div className="max-w-3xl">

@@ -4,15 +4,20 @@ import { Calendar, Users, TrendingUp, ArrowRight, Armchair, Lock, Palette } from
 import { Link } from 'react-router';
 import { useState } from 'react';
 import { PasswordModal } from '../components/password-modal';
+import { usePageTitle } from '../hooks/use-page-title';
 
 export function SessionInfoPage() {
   const [passwordModalOpen, setPasswordModalOpen] = useState(false);
+  const { title, subtitle } = usePageTitle('sessions', {
+    title: 'Session Information',
+    subtitle: 'Details about camp sessions',
+  });
 
   return (
     <div className="p-6 space-y-8">
       <div>
-        <h1>Session Information</h1>
-        <p className="text-muted-foreground mt-1">Details about camp sessions</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

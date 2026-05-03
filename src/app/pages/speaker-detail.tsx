@@ -30,10 +30,10 @@ export function SpeakerDetailPage() {
   if (!speaker) {
     return (
       <div className="p-6">
-        <Link to="/speakers">
+        <Link to="/session-info">
           <Button variant="ghost" className="mb-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Speakers
+            Back to Sessions
           </Button>
         </Link>
         <Card className="p-6 text-center">
@@ -45,10 +45,10 @@ export function SpeakerDetailPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <Link to="/speakers">
+      <Link to="/session-info">
         <Button variant="ghost" className="mb-2">
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Speakers
+          Back to Sessions
         </Button>
       </Link>
 

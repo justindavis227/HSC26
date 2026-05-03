@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
-import { useCampDates } from '../hooks/use-camp-dates';
 import { Upload, X, FileText, Image } from 'lucide-react';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -177,7 +176,6 @@ function DayCard({
 export function AdminSeatingCharts() {
   const [charts, setCharts] = useState<Record<string, SeatingChart>>({});
   const [loading, setLoading] = useState(true);
-  const { dayLabel } = useCampDates();
 
   useEffect(() => {
     supabase
@@ -220,7 +218,7 @@ export function AdminSeatingCharts() {
           <DayCard
             key={day}
             day={day}
-            label={dayLabel(day)}
+            label={day}
             chart={charts[day]}
             onUploaded={handleUploaded}
             onRemoved={handleRemoved}

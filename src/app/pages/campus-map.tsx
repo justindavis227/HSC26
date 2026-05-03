@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card } from '../components/ui/card';
 import { FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { usePageTitle } from '../hooks/use-page-title';
 
 const DEFAULT_EMBED_URL =
   'https://map.concept3d.com/?id=951#!ct/16646,17145,27935?s/?mc/39.17327183613688,-86.50675219605847?z/14.387746442553665?lvl/0';
@@ -14,6 +15,10 @@ export function CampusMapPage() {
   const [fileUrl, setFileUrl]   = useState('');
   const [fileName, setFileName] = useState('');
   const [loading, setLoading]   = useState(true);
+  const { title, subtitle } = usePageTitle('camp_map', {
+    title: 'Campus Map',
+    subtitle: 'Interactive map of IU Bloomington campus',
+  });
 
   useEffect(() => {
     supabase
@@ -34,8 +39,8 @@ export function CampusMapPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>Campus Map</h1>
-        <p className="text-muted-foreground mt-1">Interactive map of IU Bloomington campus</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       {loading ? (

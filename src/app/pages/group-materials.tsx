@@ -4,6 +4,7 @@ import { Card } from '../components/ui/card';
 import { FolderOpen, CheckCircle, Info, ArrowRight, Users, ClipboardList, ExternalLink, Images } from 'lucide-react';
 import { Link } from 'react-router';
 import { supabase } from '../../lib/supabase';
+import { usePageTitle } from '../hooks/use-page-title';
 
 const FALLBACK_ROSTER  = 'https://my.southeastchristian.org/page/1367';
 const FALLBACK_TRACKER = 'https://my.southeastchristian.org/groupapp';
@@ -11,6 +12,10 @@ const FALLBACK_TRACKER = 'https://my.southeastchristian.org/groupapp';
 export function GroupMaterialsPage() {
   const [rosterUrl,  setRosterUrl]  = useState(FALLBACK_ROSTER);
   const [trackerUrl, setTrackerUrl] = useState(FALLBACK_TRACKER);
+  const { title, subtitle } = usePageTitle('groups', {
+    title: 'Group Materials',
+    subtitle: 'Resources to Support Leaders and Groups',
+  });
 
   useEffect(() => {
     supabase.from('camp_info').select('key,value').in('key', ['student_roster_url', 'group_tracker_url'])
@@ -25,8 +30,8 @@ export function GroupMaterialsPage() {
   return (
     <div className="p-6 space-y-8">
       <div>
-        <h1>Group Materials</h1>
-        <p className="text-muted-foreground mt-1">Resources to Support Leaders and Groups</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

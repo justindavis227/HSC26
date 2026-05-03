@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { CampusTime } from '../../lib/supabase';
 import { campData } from '../data/camp-data';
+import { Upload, X, FileText, Image } from 'lucide-react';
 
 const CAMPUSES = campData.campuses.map((c) => c.name);
 
@@ -13,6 +14,9 @@ type CampusForm = {
   female_dorms: string;
   male_sg_zones: string;
   female_sg_zones: string;
+  small_group_document_url: string;
+  small_group_document_name: string;
+  small_group_document_path: string;
 };
 
 const emptyForm: CampusForm = {
@@ -23,6 +27,9 @@ const emptyForm: CampusForm = {
   female_dorms: '',
   male_sg_zones: '',
   female_sg_zones: '',
+  small_group_document_url: '',
+  small_group_document_name: '',
+  small_group_document_path: '',
 };
 
 function fromRow(row: CampusTime): CampusForm {
@@ -34,7 +41,135 @@ function fromRow(row: CampusTime): CampusForm {
     female_dorms: row.female_dorms ?? '',
     male_sg_zones: row.male_sg_zones ?? '',
     female_sg_zones: row.female_sg_zones ?? '',
+    small_group_document_url: row.small_group_document_url ?? '',
+    small_group_document_name: row.small_group_document_name ?? '',
+    small_group_document_path: row.small_group_document_path ?? '',
   };
+}
+
+function isPdf(name: string) {
+  return name.toLowerCase().endsWith('.pdf');
+}
+
+function DocUploader({
+  campusName,
+  url,
+  fileName,
+  filePath,
+  onChange,
+}: {
+  campusName: string;
+  url: string;
+  fileName: string;
+  filePath: string;
+  onChange: (url: string, name: string, path: string) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  async function handleFile(file: File) {
+    setUploadError('');
+    setUploading(true);
+
+    // Delete old file from storage first if one exists
+    if (filePath) {
+      await supabase.storage.from('campus-documents').remove([filePath]);
+    }
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `${campusName.toLowerCase().replace(/\s+/g, '-')}/${Date.now()}_${safeName}`;
+
+    const { error } = await supabase.storage
+      .from('campus-documents')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (error) {
+      setUploadError(error.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data } = supabase.storage.from('campus-documents').getPublicUrl(path);
+    onChange(data.publicUrl, file.name, path);
+    setUploading(false);
+    if (inputRef.current) inputRef.current.value = '';
+  }
+
+  async function handleRemove() {
+    if (filePath) {
+      await supabase.storage.from('campus-documents').remove([filePath]);
+    }
+    onChange('', '', '');
+  }
+
+  return (
+    <div>
+      <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+        Small Group Zone Document
+        <span className="ml-1 text-gray-400 font-normal">(optional — map or guide shown on campus detail page)</span>
+      </label>
+
+      {/* Current file preview */}
+      {url && (
+        <div className="flex items-center gap-3 p-3 mb-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          {isPdf(fileName) ? (
+            <FileText className="w-6 h-6 text-red-500 shrink-0" />
+          ) : (
+            <Image className="w-6 h-6 text-blue-500 shrink-0" />
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{fileName}</p>
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[var(--primary)] hover:underline"
+            >
+              {isPdf(fileName) ? 'View PDF ↗' : 'View image ↗'}
+            </a>
+          </div>
+          <button
+            type="button"
+            onClick={handleRemove}
+            className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition shrink-0"
+          >
+            <X className="w-3.5 h-3.5" />
+            Remove
+          </button>
+        </div>
+      )}
+
+      <div className="flex items-center gap-3">
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,application/pdf"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) handleFile(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[var(--primary)] hover:text-[var(--primary)] transition disabled:opacity-50"
+        >
+          <Upload className="w-3.5 h-3.5" />
+          {uploading ? 'Uploading…' : url ? 'Replace File' : 'Upload File'}
+        </button>
+        {!url && (
+          <span className="text-xs text-gray-400">JPG, PNG, WebP or PDF · max 20 MB</span>
+        )}
+        {uploadError && <span className="text-xs text-red-500">{uploadError}</span>}
+      </div>
+      <p className="text-xs text-gray-400 mt-1.5">
+        Upload will apply immediately. Click "Save Changes" to persist all other field edits.
+      </p>
+    </div>
+  );
 }
 
 export function AdminCampusTimes() {
@@ -181,6 +316,24 @@ export function AdminCampusTimes() {
                 className={textareaClass}
               />
             </div>
+          </div>
+
+          {/* Document upload — sits below the SG zone text fields */}
+          <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+            <DocUploader
+              campusName={selectedCampus}
+              url={form.small_group_document_url}
+              fileName={form.small_group_document_name}
+              filePath={form.small_group_document_path}
+              onChange={(url, name, path) =>
+                setForm((f) => ({
+                  ...f,
+                  small_group_document_url: url,
+                  small_group_document_name: name,
+                  small_group_document_path: path,
+                }))
+              }
+            />
           </div>
 
           <div className="flex items-center gap-3 pt-1">

@@ -98,5 +98,8 @@ export interface CampusTime {
   female_dorms: string;
   male_sg_zones: string;
   female_sg_zones: string;
+  small_group_document_url: string;
+  small_group_document_name: string;
+  small_group_document_path: string;
   updated_at?: string;
 }

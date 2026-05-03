@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router';
-import { ArrowLeft, MapPin, Utensils, Home, Users, Clock } from 'lucide-react';
+import { ArrowLeft, MapPin, Utensils, Home, Users, Clock, FileText, Download } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { campData } from '../data/camp-data';
 import { useState, useEffect } from 'react';
@@ -46,8 +46,13 @@ export function CampusDetailPage() {
   const hasAnyContent = details && (
     details.neighborhood || details.dining || details.location ||
     details.male_dorms || details.female_dorms ||
-    details.male_sg_zones || details.female_sg_zones
+    details.male_sg_zones || details.female_sg_zones ||
+    details.small_group_document_url
   );
+
+  function isPdf(name: string) {
+    return (name ?? '').toLowerCase().endsWith('.pdf');
+  }
 
   return (
     <div className="p-4 space-y-4">
@@ -123,7 +128,7 @@ export function CampusDetailPage() {
               </div>
             </Card>
           )}
-          {(details?.male_sg_zones || details?.female_sg_zones) && (
+          {(details?.male_sg_zones || details?.female_sg_zones || details?.small_group_document_url) && (
             <Card className="p-4">
               <div className="flex items-start gap-3">
                 <Users className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
@@ -136,9 +141,33 @@ export function CampusDetailPage() {
                     </div>
                   )}
                   {details.female_sg_zones && (
-                    <div>
+                    <div className={details.small_group_document_url ? 'mb-4' : ''}>
                       <p className="text-sm font-semibold text-foreground mb-0.5">Female Small Group Zones:</p>
                       <p className="text-muted-foreground text-sm whitespace-pre-line">{details.female_sg_zones}</p>
+                    </div>
+                  )}
+                  {details.small_group_document_url && (
+                    <div className="mt-3 pt-3 border-t border-border">
+                      {isPdf(details.small_group_document_name) ? (
+                        <a
+                          href={details.small_group_document_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition"
+                        >
+                          <Download className="w-4 h-4" />
+                          View Document
+                        </a>
+                      ) : (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">Zone Map</p>
+                          <img
+                            src={details.small_group_document_url}
+                            alt="Small group zone map"
+                            className="w-full rounded-lg border border-border"
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

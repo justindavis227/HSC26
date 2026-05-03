@@ -36,12 +36,12 @@ export const navigationItems = [
   { path: '/', label: 'Dashboard', icon: Home },
   { path: '/announcements', label: 'Announcements', icon: Bell },
   { path: '/schedule', label: 'Schedule', icon: Calendar },
+  { path: '/campus-info', label: 'Campus Info', icon: Building2 },
   { path: '/campus-map', label: 'Camp Map', icon: Map },
   { path: '/session-info', label: 'Sessions', icon: Info },
   { path: '/group-materials', label: 'Groups', icon: FolderOpen },
-  { path: '/contacts', label: 'Contact Info', icon: Phone },
-  { path: '/campus-info', label: 'Campus Info', icon: Building2 },
   { path: '/activities', label: 'Activities', icon: Trophy },
+  { path: '/contacts', label: 'Contact Info', icon: Phone },
   { path: '/faq', label: 'FAQ', icon: HelpCircle },
 ];
 

@@ -107,36 +107,34 @@ function ElectivesView({ shortDayLabel }: { shortDayLabel: (day: string) => stri
                   <div className="space-y-2">
                     {slotItems.map(e => (
                       <Card key={e.id} className="p-4">
-                        <div className="flex items-start gap-3">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${THEME_COLORS[e.theme] ?? THEME_COLORS.Miscellaneous}`}>
-                            {e.theme}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium leading-snug">{e.title}</p>
+                          {e.speaker && (
+                            <div className="flex items-center gap-1 mt-1 text-muted-foreground">
+                              <Users className="w-3 h-3 shrink-0" />
+                              <span className="text-xs">{e.speaker}</span>
+                            </div>
+                          )}
+                          {e.location && (
+                            <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              {e.maps_url ? (
+                                <a
+                                  href={e.maps_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-xs text-primary underline underline-offset-2 hover:opacity-75 transition-opacity"
+                                >
+                                  {e.location}
+                                </a>
+                              ) : (
+                                <span className="text-xs">{e.location}</span>
+                              )}
+                            </div>
+                          )}
+                          <span className={`inline-block mt-2 text-xs font-semibold px-2 py-0.5 rounded-full ${THEME_COLORS[e.theme] ?? THEME_COLORS.Miscellaneous}`}>
+                            {e.theme === 'Miscellaneous' ? 'Misc.' : e.theme}
                           </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium leading-snug">{e.title}</p>
-                            {e.speaker && (
-                              <div className="flex items-center gap-1 mt-1 text-muted-foreground">
-                                <Users className="w-3 h-3 shrink-0" />
-                                <span className="text-xs">{e.speaker}</span>
-                              </div>
-                            )}
-                            {e.location && (
-                              <div className="flex items-center gap-1 mt-0.5 text-muted-foreground">
-                                <MapPin className="w-3 h-3 shrink-0" />
-                                {e.maps_url ? (
-                                  <a
-                                    href={e.maps_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs text-primary underline underline-offset-2 hover:opacity-75 transition-opacity"
-                                  >
-                                    {e.location}
-                                  </a>
-                                ) : (
-                                  <span className="text-xs">{e.location}</span>
-                                )}
-                              </div>
-                            )}
-                          </div>
                         </div>
                       </Card>
                     ))}

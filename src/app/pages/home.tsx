@@ -9,10 +9,43 @@ import { localDateString } from '../utils/date';
 import { supabase } from '../../lib/supabase';
 import type { Announcement } from '../../lib/supabase';
 
+const DASHBOARD_KEYS = [
+  'dashboard_title',
+  'dashboard_subtitle',
+  'guideline_1',
+  'guideline_2',
+  'guideline_3',
+  'guideline_4',
+  'update_keyword',
+  'update_number',
+];
+
+const DEFAULTS: Record<string, string> = {
+  dashboard_title:    'High School Camp 2026',
+  dashboard_subtitle: "Your central hub for all things camp. You'll want to save this page!",
+  guideline_1: "BE|where you're supposed to be",
+  guideline_2: 'RESPECT|the people',
+  guideline_3: 'RESPECT|the place',
+  guideline_4: 'WEAR|your wristband',
+  update_keyword: 'HSC26',
+  update_number:  '733-733',
+};
+
 export function HomePage() {
   const today = localDateString();
   const [todayAnnouncements, setTodayAnnouncements] = useState<Announcement[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [config, setConfig] = useState<Record<string, string>>(DEFAULTS);
+
+  useEffect(() => {
+    supabase.from('camp_info').select('key,value').in('key', DASHBOARD_KEYS)
+      .then(({ data }) => {
+        if (!data?.length) return;
+        const merged: Record<string, string> = { ...DEFAULTS };
+        data.forEach(r => { if (r.value) merged[r.key] = r.value; });
+        setConfig(merged);
+      });
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -39,13 +72,19 @@ export function HomePage() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [today]);
 
+  const guidelines = [1, 2, 3, 4].map(n => {
+    const raw = config[`guideline_${n}`] ?? '';
+    const idx = raw.indexOf('|');
+    return idx === -1
+      ? { bold: raw, text: '' }
+      : { bold: raw.slice(0, idx), text: raw.slice(idx + 1) };
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h1>High School Camp 2026</h1>
-        <p className="text-muted-foreground mt-1">
-          Your central hub for schedules, activities, and important information
-        </p>
+        <h1>{config.dashboard_title}</h1>
+        <p className="text-muted-foreground mt-1">{config.dashboard_subtitle}</p>
       </div>
 
       <div>
@@ -85,22 +124,17 @@ export function HomePage() {
           <h3 className="text-lg font-bold">Camp Guidelines</h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
-          {[
-            ['BE', 'where you\'re supposed to be'],
-            ['RESPECT', 'the people'],
-            ['RESPECT', 'the place'],
-            ['WEAR', 'your wristband'],
-          ].map(([bold, rest], i) => (
+          {guidelines.map(({ bold, text }, i) => (
             <div key={i} className="flex items-center gap-2 bg-white/80 dark:bg-gray-900/80 rounded-md px-3 py-2">
               <span className="text-primary font-bold text-lg">•••</span>
-              <span className="text-xs"><strong>{bold}</strong> {rest}</span>
+              <span className="text-xs"><strong>{bold}</strong>{text ? ` ${text}` : ''}</span>
             </div>
           ))}
         </div>
         <div className="bg-white dark:bg-gray-900 rounded-md px-3 py-2 text-center">
           <p className="text-xs">
-            Text <strong className="text-primary">HSC26</strong> to{' '}
-            <strong className="text-primary">733-733</strong> for updates
+            Text <strong className="text-primary">{config.update_keyword}</strong> to{' '}
+            <strong className="text-primary">{config.update_number}</strong> for updates
           </p>
         </div>
       </Card>

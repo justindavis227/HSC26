@@ -3,14 +3,16 @@ import { NavLink, Outlet, Navigate, useNavigate } from 'react-router';
 import { useAuth } from '../context/auth-context';
 
 const navItems = [
-  { path: '/admin', label: 'Dashboard', icon: '📊', end: true },
-  { path: '/admin/announcements', label: 'Announcements', icon: '📢' },
-  { path: '/admin/schedule', label: 'Schedule', icon: '📅' },
-  { path: '/admin/campus-times', label: 'Campus Info', icon: '🏫' },
-  { path: '/admin/sessions', label: 'Sessions', icon: '🎤' },
-  { path: '/admin/groups',     label: 'Groups',     icon: '👥' },
-  { path: '/admin/activities', label: 'Activities', icon: '🏆' },
-  { path: '/admin/faq', label: 'FAQ', icon: '❓' },
+  { path: '/admin',                label: 'Dashboard',    icon: '📊', end: true },
+  { path: '/admin/announcements',  label: 'Announcements', icon: '📢' },
+  { path: '/admin/schedule',       label: 'Schedule',     icon: '📅' },
+  { path: '/admin/campus-times',   label: 'Campus Info',  icon: '🏫' },
+  { path: '/admin/camp-map',       label: 'Camp Map',     icon: '🗺️' },
+  { path: '/admin/sessions',       label: 'Sessions',     icon: '🎤' },
+  { path: '/admin/groups',         label: 'Groups',       icon: '👥' },
+  { path: '/admin/activities',     label: 'Activities',   icon: '🏆' },
+  { path: '/admin/contacts',       label: 'Contact Info', icon: '📞' },
+  { path: '/admin/faq',            label: 'FAQ',          icon: '❓' },
 ];
 
 export function AdminLayout() {

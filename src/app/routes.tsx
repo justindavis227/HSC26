@@ -29,6 +29,8 @@ import { AdminCampInfo } from './admin/camp-info';
 import { AdminCampusTimes } from './admin/campus-times';
 import { AdminActivities } from './admin/activities';
 import { AdminGroups } from './admin/groups';
+import { AdminCampMap } from './admin/camp-map';
+import { AdminContacts } from './admin/contacts';
 import { ActivitiesPage } from './pages/activities';
 import { GroupCardsPage } from './pages/group-cards';
 
@@ -64,6 +66,8 @@ export const router = createBrowserRouter([
       { path: 'campus-times', element: <AdminCampusTimes /> },
       { path: 'activities', element: <AdminActivities /> },
       { path: 'groups',     element: <AdminGroups /> },
+      { path: 'camp-map',   element: <AdminCampMap /> },
+      { path: 'contacts',   element: <AdminContacts /> },
     ],
   },
 

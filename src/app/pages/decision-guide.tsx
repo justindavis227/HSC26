@@ -25,7 +25,7 @@ export function DecisionGuidePage() {
   }, []);
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-6">
       <div>
         <Link to="/group-materials">
           <Button variant="ghost" className="mb-4">

@@ -28,7 +28,7 @@ export function GroupMaterialsPage() {
   }, []);
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-6">
       <div>
         <h1>{title}</h1>
         <p className="text-muted-foreground mt-1">{subtitle}</p>
@@ -131,9 +131,7 @@ export function GroupMaterialsPage() {
                 </div>
                 <div>
                   <h3 className="text-lg mb-1">Decision Guide</h3>
-                  <p className="text-sm text-muted-foreground">
-                    A guide for leaders to help students as they make decisions for Christ
-                  </p>
+                  <p className="text-sm text-muted-foreground">Tool for leaders to help students make decisions for Christ</p>
                 </div>
               </div>
               <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />

@@ -14,7 +14,7 @@ export function SessionInfoPage() {
   });
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-6">
       <div>
         <h1>{title}</h1>
         <p className="text-muted-foreground mt-1">{subtitle}</p>

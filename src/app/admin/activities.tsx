@@ -1,25 +1,75 @@
 import { useEffect, useState } from 'react';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates,
+  useSortable, verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Tournament, Elective } from '../../lib/supabase';
 import { PageTitleEditor } from './page-title-editor';
 
-// ─── Tournaments ────────────────────────────────────────────────────────────
+// ─── Tournaments ─────────────────────────────────────────────────────────────
 
 const T_DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const T_DAY_ORDER: Record<string, number> = { Tuesday: 1, Wednesday: 2, Thursday: 3, Friday: 4 };
 
-type TForm = { activity: string; sort_order: number };
-const emptyT: TForm = { activity: '', sort_order: 0 };
+type TForm = { activity: string };
+const emptyT: TForm = { activity: '' };
+
+async function persistTournamentOrder(ordered: Tournament[]) {
+  await Promise.all(ordered.map((item, idx) =>
+    supabase.from('tournaments').update({ sort_order: idx + 1 }).eq('id', item.id)
+  ));
+}
+
+function SortableTournament({ item, isEditing, deleting, onEdit, onDelete }: {
+  item: Tournament; isEditing: boolean; deleting: boolean;
+  onEdit: () => void; onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1, zIndex: isDragging ? 10 : undefined }}
+      className={`bg-white dark:bg-gray-900 rounded-lg border px-3 py-3 flex items-center gap-3 ${isEditing ? 'border-[var(--primary)]' : 'border-gray-200 dark:border-gray-800'}`}
+    >
+      <button
+        {...attributes} {...listeners}
+        className="p-0.5 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none shrink-0"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <span className="flex-1 text-sm text-gray-900 dark:text-white">{item.activity}</span>
+      <button onClick={onEdit} className="text-xs text-gray-400 hover:text-[var(--primary)] transition p-1">Edit</button>
+      <button onClick={onDelete} disabled={deleting} className="text-xs text-gray-400 hover:text-red-600 transition p-1 disabled:opacity-40">
+        {deleting ? '…' : 'Del'}
+      </button>
+    </div>
+  );
+}
 
 function TournamentsEditor() {
-  const [day, setDay] = useState('Tuesday');
-  const [items, setItems] = useState<Tournament[]>([]);
+  const [day, setDay]         = useState('Tuesday');
+  const [items, setItems]     = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Tournament | null>(null);
-  const [form, setForm] = useState<TForm>(emptyT);
-  const [saving, setSaving] = useState(false);
+  const [form, setForm]       = useState<TForm>(emptyT);
+  const [saving, setSaving]   = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError]     = useState('');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor,  { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor,    { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   async function load(d: string) {
     setLoading(true);
@@ -30,17 +80,17 @@ function TournamentsEditor() {
 
   useEffect(() => { load(day); }, [day]);
 
-  function startNew() { setEditing(null); setForm({ activity: '', sort_order: items.length + 1 }); setError(''); }
-  function startEdit(item: Tournament) { setEditing(item); setForm({ activity: item.activity, sort_order: item.sort_order }); setError(''); }
+  function startNew() { setEditing(null); setForm(emptyT); setError(''); }
+  function startEdit(item: Tournament) { setEditing(item); setForm({ activity: item.activity }); setError(''); }
 
   async function save() {
     if (!form.activity.trim()) { setError('Activity name is required.'); return; }
     setSaving(true); setError('');
-    const payload = { ...form, day, day_order: T_DAY_ORDER[day] ?? 0 };
+    const payload = { activity: form.activity, day, day_order: T_DAY_ORDER[day] ?? 0 };
     if (editing) {
       await supabase.from('tournaments').update(payload).eq('id', editing.id);
     } else {
-      await supabase.from('tournaments').insert(payload);
+      await supabase.from('tournaments').insert({ ...payload, sort_order: items.length + 1 });
     }
     setSaving(false); setEditing(null); setForm(emptyT); load(day);
   }
@@ -52,11 +102,20 @@ function TournamentsEditor() {
     setDeleting(null); load(day);
   }
 
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = items.findIndex(i => i.id === active.id);
+    const newIdx = items.findIndex(i => i.id === over.id);
+    const reordered = arrayMove(items, oldIdx, newIdx);
+    setItems(reordered);
+    await persistTournamentOrder(reordered);
+  }
+
   const inputClass = 'flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]';
 
   return (
     <div className="max-w-2xl space-y-4">
-      {/* Day selector */}
       <div>
         <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Day</label>
         <div className="flex gap-2 flex-wrap">
@@ -69,7 +128,6 @@ function TournamentsEditor() {
         </div>
       </div>
 
-      {/* Form */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
         <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
           {editing ? `Editing: ${editing.activity}` : `New activity — ${day}`}
@@ -78,8 +136,6 @@ function TournamentsEditor() {
         <div className="flex gap-2">
           <input type="text" value={form.activity} onChange={e => setForm(f => ({ ...f, activity: e.target.value }))}
             placeholder="Activity name" className={inputClass} />
-          <input type="number" value={form.sort_order} onChange={e => setForm(f => ({ ...f, sort_order: Number(e.target.value) }))}
-            placeholder="Order" className="w-20 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]" />
         </div>
         <div className="flex gap-2 mt-3">
           <button onClick={save} disabled={saving}
@@ -97,21 +153,24 @@ function TournamentsEditor() {
         </div>
       </div>
 
-      {/* List */}
       {loading ? <div className="text-sm text-gray-400 text-center py-6">Loading…</div> : (
-        <div className="space-y-2">
-          {items.map((item, i) => (
-            <div key={item.id} className={`bg-white dark:bg-gray-900 rounded-lg border px-4 py-3 flex items-center gap-3 ${editing?.id === item.id ? 'border-[var(--primary)]' : 'border-gray-200 dark:border-gray-800'}`}>
-              <span className="text-xs text-gray-400 w-5 text-right">{i + 1}</span>
-              <span className="flex-1 text-sm text-gray-900 dark:text-white">{item.activity}</span>
-              <button onClick={() => startEdit(item)} className="text-xs text-gray-400 hover:text-[var(--primary)] transition">Edit</button>
-              <button onClick={() => remove(item.id)} disabled={deleting === item.id} className="text-xs text-gray-400 hover:text-red-600 transition disabled:opacity-40">
-                {deleting === item.id ? '…' : 'Del'}
-              </button>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {items.map(item => (
+                <SortableTournament
+                  key={item.id}
+                  item={item}
+                  isEditing={editing?.id === item.id}
+                  deleting={deleting === item.id}
+                  onEdit={() => startEdit(item)}
+                  onDelete={() => remove(item.id)}
+                />
+              ))}
+              {items.length === 0 && <div className="text-sm text-gray-400 text-center py-6">No activities for {day}.</div>}
             </div>
-          ))}
-          {items.length === 0 && <div className="text-sm text-gray-400 text-center py-6">No activities for {day}.</div>}
-        </div>
+          </SortableContext>
+        </DndContext>
       )}
     </div>
   );
@@ -128,15 +187,108 @@ const THEME_ORDER: Record<string, number> = { Jesus: 1, Prayer: 2, Bible: 3, Ser
 type EForm = Omit<Elective, 'id' | 'updated_at' | 'day_order' | 'slot_order' | 'theme_order'>;
 const emptyE: EForm = { day: E_DAYS[0], time_slot: '1:30-2:30', theme: 'Jesus', title: '', speaker: '', location: '', maps_url: '' };
 
+function SortableElective({ item, isEditing, deleting, onEdit, onDelete }: {
+  item: Elective; isEditing: boolean; deleting: boolean;
+  onEdit: () => void; onDelete: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1, zIndex: isDragging ? 10 : undefined }}
+      className={`bg-white dark:bg-gray-900 rounded-lg border px-3 py-3 flex gap-3 items-start ${isEditing ? 'border-[var(--primary)]' : 'border-gray-200 dark:border-gray-800'}`}
+    >
+      <button
+        {...attributes} {...listeners}
+        className="p-0.5 mt-0.5 text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 cursor-grab active:cursor-grabbing touch-none shrink-0"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 mb-0.5">
+          <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">{item.theme}</span>
+        </div>
+        <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.title}</div>
+        {item.speaker && <div className="text-xs text-gray-500 truncate">{item.speaker}</div>}
+        {item.location && (
+          <div className="text-xs text-gray-400 truncate">
+            {item.location}
+            {item.maps_url && <span className="ml-1 text-[var(--primary)]">↗</span>}
+          </div>
+        )}
+      </div>
+      <div className="flex gap-1 shrink-0">
+        <button onClick={onEdit} className="text-xs text-gray-400 hover:text-[var(--primary)] transition p-1">Edit</button>
+        <button onClick={onDelete} disabled={deleting} className="text-xs text-gray-400 hover:text-red-600 transition p-1 disabled:opacity-40">
+          {deleting ? '…' : 'Del'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function SlotDndList({ slot, items, editingId, deleting, onReorder, onEdit, onDelete }: {
+  slot: string;
+  items: Elective[];
+  editingId: number | null | undefined;
+  deleting: number | null;
+  onReorder: (slot: string, reordered: Elective[]) => void;
+  onEdit: (item: Elective) => void;
+  onDelete: (id: number) => void;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor,  { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor,    { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = items.findIndex(i => i.id === active.id);
+    const newIdx = items.findIndex(i => i.id === over.id);
+    const reordered = arrayMove(items, oldIdx, newIdx);
+    onReorder(slot, reordered);
+    await Promise.all(reordered.map((item, idx) =>
+      supabase.from('electives').update({ theme_order: idx + 1 }).eq('id', item.id)
+    ));
+  }
+
+  if (items.length === 0) {
+    return <div className="text-xs text-gray-400 text-center py-3">No electives for this slot.</div>;
+  }
+
+  return (
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+        <div className="space-y-2">
+          {items.map(item => (
+            <SortableElective
+              key={item.id}
+              item={item}
+              isEditing={editingId === item.id}
+              deleting={deleting === item.id}
+              onEdit={() => onEdit(item)}
+              onDelete={() => onDelete(item.id)}
+            />
+          ))}
+        </div>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
 function ElectivesEditor() {
   const [filterDay, setFilterDay] = useState(E_DAYS[0]);
-  const [items, setItems] = useState<Elective[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<Elective | null>(null);
-  const [form, setForm] = useState<EForm>(emptyE);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState<number | null>(null);
-  const [error, setError] = useState('');
+  const [items, setItems]         = useState<Elective[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [editing, setEditing]     = useState<Elective | null>(null);
+  const [form, setForm]           = useState<EForm>(emptyE);
+  const [saving, setSaving]       = useState(false);
+  const [deleting, setDeleting]   = useState<number | null>(null);
+  const [error, setError]         = useState('');
 
   async function load() {
     setLoading(true);
@@ -180,6 +332,17 @@ function ElectivesEditor() {
     setDeleting(null); load();
   }
 
+  function handleSlotReorder(slot: string, reordered: Elective[]) {
+    setItems(prev => {
+      const others = prev.filter(e => !(e.day === filterDay && e.time_slot === slot));
+      return [...others, ...reordered].sort((a, b) => {
+        if (a.day_order !== b.day_order) return a.day_order - b.day_order;
+        if (a.slot_order !== b.slot_order) return a.slot_order - b.slot_order;
+        return a.theme_order - b.theme_order;
+      });
+    });
+  }
+
   const inputClass = 'w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]';
   const sel = (label: string, key: keyof EForm, options: string[]) => (
     <div>
@@ -197,10 +360,13 @@ function ElectivesEditor() {
   );
 
   const displayed = items.filter(e => e.day === filterDay);
+  const bySlot: Record<string, Elective[]> = {};
+  for (const slot of TIME_SLOTS) {
+    bySlot[slot] = displayed.filter(e => e.time_slot === slot);
+  }
 
   return (
     <div className="max-w-3xl space-y-4">
-      {/* Form */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -223,13 +389,8 @@ function ElectivesEditor() {
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
                 Maps URL <span className="text-gray-400 font-normal">(optional)</span>
               </label>
-              <input
-                type="url"
-                value={form.maps_url}
-                onChange={e => setForm(f => ({ ...f, maps_url: e.target.value }))}
-                placeholder="https://maps.google.com/…"
-                className={inputClass}
-              />
+              <input type="url" value={form.maps_url} onChange={e => setForm(f => ({ ...f, maps_url: e.target.value }))}
+                placeholder="https://maps.google.com/…" className={inputClass} />
             </div>
           </div>
         </div>
@@ -246,7 +407,6 @@ function ElectivesEditor() {
         </div>
       </div>
 
-      {/* Day filter */}
       <div className="flex gap-2 flex-wrap">
         {E_DAYS.map(d => (
           <button key={d} onClick={() => setFilterDay(d)}
@@ -256,31 +416,20 @@ function ElectivesEditor() {
         ))}
       </div>
 
-      {/* List */}
       {loading ? <div className="text-sm text-gray-400 text-center py-6">Loading…</div> : (
-        <div className="space-y-2">
-          {displayed.map(item => (
-            <div key={item.id} className={`bg-white dark:bg-gray-900 rounded-lg border px-4 py-3 flex gap-3 items-start ${editing?.id === item.id ? 'border-[var(--primary)]' : 'border-gray-200 dark:border-gray-800'}`}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-xs font-mono text-gray-400">{item.time_slot}</span>
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400">{item.theme}</span>
-                </div>
-                <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.title}</div>
-                {item.speaker && <div className="text-xs text-gray-500 truncate">{item.speaker}</div>}
-                {item.location && (
-                  <div className="text-xs text-gray-400 truncate">
-                    {item.location}
-                    {item.maps_url && <span className="ml-1 text-[var(--primary)]">↗</span>}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-1 shrink-0">
-                <button onClick={() => startEdit(item)} className="text-xs text-gray-400 hover:text-[var(--primary)] transition p-1">Edit</button>
-                <button onClick={() => remove(item.id)} disabled={deleting === item.id} className="text-xs text-gray-400 hover:text-red-600 transition p-1 disabled:opacity-40">
-                  {deleting === item.id ? '…' : 'Del'}
-                </button>
-              </div>
+        <div className="space-y-6">
+          {TIME_SLOTS.map(slot => (
+            <div key={slot}>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">{slot}</h3>
+              <SlotDndList
+                slot={slot}
+                items={bySlot[slot] ?? []}
+                editingId={editing?.id}
+                deleting={deleting}
+                onReorder={handleSlotReorder}
+                onEdit={startEdit}
+                onDelete={remove}
+              />
             </div>
           ))}
           {displayed.length === 0 && <div className="text-sm text-gray-400 text-center py-6">No electives for this day.</div>}
@@ -290,7 +439,7 @@ function ElectivesEditor() {
   );
 }
 
-// ─── Main component ──────────────────────────────────────────────────────────
+// ─── Main component ───────────────────────────────────────────────────────────
 
 type Tab = 'tournaments' | 'electives';
 const TABS: { id: Tab; label: string }[] = [

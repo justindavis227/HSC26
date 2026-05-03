@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router';
-import { Menu, X, Moon, Sun } from 'lucide-react';
+import { Menu, X, Moon, Sun, Search } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { navigationItems } from '../routes';
 import { Button } from './ui/button';
@@ -7,12 +7,17 @@ import { cn } from './ui/utils';
 import { useTheme } from '../context/theme-context';
 import { getUnreadCount } from '../utils/announcement-tracker';
 import { supabase } from '../../lib/supabase';
+import { SearchProvider } from '../context/search-context';
+import { useSearch } from '../context/search-context';
+import { SearchOverlay } from './search-overlay';
 
-export function DashboardLayout() {
+// Inner layout — can safely use useSearch() since it's inside SearchProvider
+function DashboardLayoutInner() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
+  const { open: openSearch } = useSearch();
 
   async function refreshUnread() {
     const { data } = await supabase.from('announcements').select('id');
@@ -36,7 +41,10 @@ export function DashboardLayout() {
         <div className="flex items-center gap-3">
           <img src="/images/logo.png" alt="HSC 2026" className="h-8 object-contain" />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="sm" onClick={openSearch} className="p-2" aria-label="Search">
+            <Search className="w-5 h-5" />
+          </Button>
           <Button variant="ghost" size="sm" onClick={toggleTheme} className="p-2" aria-label="Toggle theme">
             {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </Button>
@@ -53,13 +61,16 @@ export function DashboardLayout() {
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <div className="px-5 py-4 border-b border-border">
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
           <img
             src="/images/logo.png"
             alt="Southeast Camps — High School Camp"
             style={{ width: '140px' }}
             className="object-contain"
           />
+          <Button variant="ghost" size="sm" onClick={openSearch} className="p-2 hidden lg:flex" aria-label="Search">
+            <Search className="w-5 h-5" />
+          </Button>
         </div>
 
         <nav className="p-4 space-y-1">
@@ -120,6 +131,16 @@ export function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+
+      <SearchOverlay />
     </div>
+  );
+}
+
+export function DashboardLayout() {
+  return (
+    <SearchProvider>
+      <DashboardLayoutInner />
+    </SearchProvider>
   );
 }

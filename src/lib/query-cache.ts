@@ -6,13 +6,14 @@ interface CacheEntry<T> {
 const store = new Map<string, CacheEntry<unknown>>();
 
 export const TTL = {
-  SCHEDULE:     5 * 60 * 1000,
-  SPEAKERS:    10 * 60 * 1000,
-  FAQS:        10 * 60 * 1000,
+  SCHEDULE:      5 * 60 * 1000,
+  SPEAKERS:     10 * 60 * 1000,
+  FAQS:         10 * 60 * 1000,
   CAMPUS_TIMES: 10 * 60 * 1000,
-  ELECTIVES:   10 * 60 * 1000,
-  TOURNAMENTS: 10 * 60 * 1000,
-  THEMES:      10 * 60 * 1000,
+  ELECTIVES:    10 * 60 * 1000,
+  TOURNAMENTS:  10 * 60 * 1000,
+  THEMES:       10 * 60 * 1000,
+  GROUP_CARDS:  10 * 60 * 1000,
 };
 
 /** Returns any cached value for key regardless of freshness (for SWR immediate display). */

@@ -1,6 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import UnderlineExt from '@tiptap/extension-underline';
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor,
+  useSensor, useSensors, type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
+  useSortable, arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  Upload, X, FileText, Image, Plus, GripVertical,
+  Bold, Italic, Underline, List, ListOrdered,
+} from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { Upload, X, FileText, Image, Plus, GripVertical } from 'lucide-react';
+import type { GroupCardContent } from '../../lib/supabase';
 import { PageTitleEditor } from './page-title-editor';
 
 // ── shared helpers ────────────────────────────────────────────────────────────
@@ -72,117 +88,302 @@ function LinksEditor() {
 
 // ── Group Cards subsection ────────────────────────────────────────────────────
 
-const DAY_SLOTS = [
-  { label: 'Day 1', sort: 1 },
-  { label: 'Day 2', sort: 2 },
-  { label: 'Day 3', sort: 3 },
-  { label: 'Day 4', sort: 4 },
-  { label: 'Day 5', sort: 5 },
-  { label: 'Bonus', sort: 6 },
-];
+type CardForm = {
+  label: string;
+  content: string;
+  content_color: string;
+  label_color: string;
+  bg_color: string;
+};
 
-interface GroupCard { day_label: string; sort_order: number; file_url: string; file_name: string; file_path: string; }
+const emptyCardForm = (): CardForm => ({
+  label: '',
+  content: '',
+  content_color: '#C83030',
+  label_color: '#5a2020',
+  bg_color: '#1a0808',
+});
 
-function GroupCardSlot({ slot, card, onUploaded, onRemoved }: {
-  slot: { label: string; sort: number };
-  card?: GroupCard;
-  onUploaded: (c: GroupCard) => void;
-  onRemoved: (label: string) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [err, setErr] = useState('');
-
-  async function handleFile(file: File) {
-    setErr(''); setUploading(true);
-    if (card?.file_path) await supabase.storage.from('group-cards').remove([card.file_path]);
-    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-    const path = `${slot.label.toLowerCase().replace(/\s/g, '-')}/${Date.now()}_${safe}`;
-    const { error: upErr } = await supabase.storage.from('group-cards').upload(path, file, { upsert: true, contentType: file.type });
-    if (upErr) { setErr(upErr.message); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from('group-cards').getPublicUrl(path);
-    const row: GroupCard = { day_label: slot.label, sort_order: slot.sort, file_url: urlData.publicUrl, file_name: file.name, file_path: path };
-    await supabase.from('group_cards').upsert(row, { onConflict: 'day_label' });
-    onUploaded(row);
-    setUploading(false);
-    if (inputRef.current) inputRef.current.value = '';
-  }
-
-  async function handleRemove() {
-    if (card?.file_path) await supabase.storage.from('group-cards').remove([card.file_path]);
-    await supabase.from('group_cards').delete().eq('day_label', slot.label);
-    onRemoved(slot.label);
-  }
-
+function TiptapToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+  if (!editor) return null;
+  const btn = (active: boolean) =>
+    `p-1.5 rounded text-xs transition ${active ? 'bg-[var(--primary)] text-white' : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'}`;
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{slot.label}</span>
-        {card && (
-          <button onClick={handleRemove} className="inline-flex items-center gap-1 text-xs text-red-400 hover:text-red-600 transition">
-            <X className="w-3.5 h-3.5" />Remove
-          </button>
-        )}
+    <div className="flex flex-wrap gap-1 p-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+      <button type="button" onClick={() => editor.chain().focus().toggleBold().run()} className={btn(editor.isActive('bold'))}><Bold className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()} className={btn(editor.isActive('italic'))}><Italic className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={() => editor.chain().focus().toggleUnderline().run()} className={btn(editor.isActive('underline'))}><Underline className="w-3.5 h-3.5" /></button>
+      <div className="w-px bg-gray-200 dark:bg-gray-700 mx-0.5" />
+      <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()} className={btn(editor.isActive('bulletList'))}><List className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()} className={btn(editor.isActive('orderedList'))}><ListOrdered className="w-3.5 h-3.5" /></button>
+    </div>
+  );
+}
+
+function SortableCardRow({ card, isEditing, onEdit, onDelete }: {
+  card: GroupCardContent;
+  isEditing: boolean;
+  onEdit: (card: GroupCardContent) => void;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: card.id });
+  const style = { transform: CSS.Transform.toString(transform), transition };
+  return (
+    <div ref={setNodeRef} style={style}
+      className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3 flex items-center gap-3">
+      <button {...attributes} {...listeners} className="cursor-grab text-gray-400 hover:text-gray-600 touch-none">
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <div className="w-4 h-4 rounded-full shrink-0 border border-gray-300 dark:border-gray-600" style={{ backgroundColor: card.bg_color }} />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{card.label}</p>
       </div>
-      {card && (
-        <div className="mb-3">
-          {isPdf(card.file_name) ? (
-            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <FileText className="w-6 h-6 text-red-500 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{card.file_name}</p>
-                <a href={card.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[var(--primary)] hover:underline">View PDF ↗</a>
-              </div>
-            </div>
-          ) : (
-            <div className="rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 max-h-40">
-              <img src={card.file_url} alt={slot.label} className="w-full h-full object-contain bg-gray-50 dark:bg-gray-800" />
-            </div>
-          )}
-        </div>
-      )}
-      <div className="flex items-center gap-3">
-        <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" className="hidden"
-          onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
-        <button type="button" onClick={() => inputRef.current?.click()} disabled={uploading}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:border-[var(--primary)] hover:text-[var(--primary)] transition disabled:opacity-50">
-          {isPdf(card?.file_name ?? '') ? <FileText className="w-3.5 h-3.5" /> : <Image className="w-3.5 h-3.5" />}
-          {uploading ? 'Uploading…' : card ? 'Replace' : 'Upload File'}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          onClick={() => onEdit(card)}
+          className={`text-xs px-3 py-1 rounded-lg font-semibold transition ${
+            isEditing
+              ? 'bg-[var(--primary)] text-white'
+              : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[var(--primary)] hover:text-[var(--primary)]'
+          }`}
+        >
+          {isEditing ? 'Editing' : 'Edit'}
         </button>
-        {!card && <span className="text-xs text-gray-400">JPG, PNG, WebP or PDF · max 20 MB</span>}
-        {err && <span className="text-xs text-red-500">{err}</span>}
+        <button onClick={() => onDelete(card.id)} className="text-xs text-red-400 hover:text-red-600 transition">
+          Del
+        </button>
       </div>
     </div>
   );
 }
 
 function GroupCardsEditor() {
-  const [cards, setCards] = useState<Record<string, GroupCard>>({});
+  const [selectedDay, setSelectedDay] = useState(1);
+  const [cards, setCards] = useState<GroupCardContent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<CardForm>(emptyCardForm());
+  const [saving, setSaving] = useState(false);
+
+  const editor = useEditor({
+    extensions: [StarterKit, UnderlineExt],
+    content: '',
+    onUpdate: ({ editor }) => setForm(f => ({ ...f, content: editor.getHTML() })),
+  });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   useEffect(() => {
-    supabase.from('group_cards').select('*').order('sort_order').then(({ data }) => {
-      const map: Record<string, GroupCard> = {};
-      (data ?? []).forEach((r: GroupCard) => { map[r.day_label] = r; });
-      setCards(map);
-      setLoading(false);
-    });
-  }, []);
+    setLoading(true);
+    setEditingId(null);
+    supabase.from('group_cards_content').select('*').eq('day_number', selectedDay).order('sort_order')
+      .then(({ data }) => {
+        setCards(prev => [...prev.filter(c => c.day_number !== selectedDay), ...(data ?? [])]);
+        setLoading(false);
+      });
+  }, [selectedDay]);
 
-  if (loading) return <div className="text-sm text-gray-400 text-center py-8">Loading…</div>;
+  const dayCards = cards
+    .filter(c => c.day_number === selectedDay)
+    .sort((a, b) => a.sort_order - b.sort_order);
+
+  function handleDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const oldIdx = dayCards.findIndex(c => c.id === active.id);
+    const newIdx = dayCards.findIndex(c => c.id === over.id);
+    const reordered = arrayMove(dayCards, oldIdx, newIdx).map((c, i) => ({ ...c, sort_order: i + 1 }));
+    setCards(prev => [...prev.filter(c => c.day_number !== selectedDay), ...reordered]);
+    Promise.all(reordered.map(c =>
+      supabase.from('group_cards_content').update({ sort_order: c.sort_order }).eq('id', c.id)
+    ));
+  }
+
+  function startEdit(card: GroupCardContent) {
+    setEditingId(card.id);
+    setForm({ label: card.label, content: card.content, content_color: card.content_color, label_color: card.label_color, bg_color: card.bg_color });
+    editor?.commands.setContent(card.content);
+  }
+
+  function startNew() {
+    setEditingId('new');
+    setForm(emptyCardForm());
+    editor?.commands.setContent('');
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    editor?.commands.setContent('');
+  }
+
+  async function save() {
+    if (!form.label.trim()) return;
+    setSaving(true);
+    if (editingId === 'new') {
+      const nextOrder = (dayCards[dayCards.length - 1]?.sort_order ?? 0) + 1;
+      const { data } = await supabase.from('group_cards_content').insert({
+        day_number: selectedDay,
+        card_number: nextOrder,
+        label: form.label,
+        content: form.content,
+        content_color: form.content_color,
+        label_color: form.label_color,
+        bg_color: form.bg_color,
+        sort_order: nextOrder,
+      }).select().single();
+      if (data) setCards(prev => [...prev, data as GroupCardContent]);
+    } else if (editingId) {
+      await supabase.from('group_cards_content').update({
+        label: form.label,
+        content: form.content,
+        content_color: form.content_color,
+        label_color: form.label_color,
+        bg_color: form.bg_color,
+      }).eq('id', editingId);
+      setCards(prev => prev.map(c => c.id === editingId ? { ...c, ...form } : c));
+    }
+    setSaving(false);
+    cancelEdit();
+  }
+
+  async function deleteCard(id: string) {
+    if (!confirm('Delete this card?')) return;
+    await supabase.from('group_cards_content').delete().eq('id', id);
+    setCards(prev => prev.filter(c => c.id !== id));
+    if (editingId === id) cancelEdit();
+  }
+
+  function ColorField({ label, field }: { label: string; field: keyof CardForm }) {
+    const val = form[field] as string;
+    return (
+      <div>
+        <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">{label}</label>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={val.startsWith('#') ? val : '#888888'}
+            onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
+            className="w-8 h-8 rounded cursor-pointer border border-gray-200 dark:border-gray-700 p-0.5 bg-white dark:bg-gray-800"
+          />
+          <input
+            type="text"
+            value={val}
+            onChange={e => setForm(f => ({ ...f, [field]: e.target.value }))}
+            className="flex-1 px-2 py-1.5 text-xs rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono focus:outline-none focus:ring-1 focus:ring-[var(--primary)]"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl">
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-        Upload one file per day slot. Appears on the live Group Cards page organized by day.
-      </p>
-      <div className="space-y-3">
-        {DAY_SLOTS.map(slot => (
-          <GroupCardSlot key={slot.label} slot={slot} card={cards[slot.label]}
-            onUploaded={c => setCards(prev => ({ ...prev, [c.day_label]: c }))}
-            onRemoved={label => setCards(prev => { const n = { ...prev }; delete n[label]; return n; })} />
+      {/* Day selector */}
+      <div className="flex gap-2 mb-5 flex-wrap">
+        {[1, 2, 3, 4, 5].map(day => (
+          <button key={day} onClick={() => setSelectedDay(day)}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
+              selectedDay === day
+                ? 'bg-[var(--primary)] text-white'
+                : 'border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[var(--primary)]'
+            }`}>
+            Day {day}
+          </button>
         ))}
       </div>
+
+      {loading ? (
+        <div className="text-sm text-gray-400 text-center py-8">Loading…</div>
+      ) : (
+        <div className="space-y-4">
+          {/* Sortable card list */}
+          {dayCards.length > 0 && (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={dayCards.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2">
+                  {dayCards.map(card => (
+                    <SortableCardRow
+                      key={card.id}
+                      card={card}
+                      isEditing={editingId === card.id}
+                      onEdit={startEdit}
+                      onDelete={deleteCard}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
+
+          {dayCards.length === 0 && editingId !== 'new' && (
+            <p className="text-sm text-gray-400 text-center py-4">No cards for Day {selectedDay} yet.</p>
+          )}
+
+          {/* Edit / Add form */}
+          {editingId !== null && (
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                {editingId === 'new' ? `Add Card — Day ${selectedDay}` : 'Edit Card'}
+              </h3>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Label *</label>
+                <input type="text" value={form.label} onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+                  placeholder="Card title / activity name" className={inputClass} />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Content *</label>
+                <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden tiptap-editor">
+                  <TiptapToolbar editor={editor} />
+                  <div className="px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white min-h-[100px]">
+                    <EditorContent editor={editor} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <ColorField label="Content Color" field="content_color" />
+                <ColorField label="Label BG Color" field="label_color" />
+                <ColorField label="Card BG Color" field="bg_color" />
+              </div>
+
+              {/* Preview */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Preview</label>
+                <div className="rounded-xl overflow-hidden" style={{ backgroundColor: form.bg_color, maxHeight: '200px', display: 'flex', flexDirection: 'column' }}>
+                  <div className="px-4 py-2 shrink-0" style={{ backgroundColor: form.label_color }}>
+                    <p className="text-white font-bold text-sm">{form.label || 'Card Label'}</p>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 rich-text text-sm" style={{ color: form.content_color }}
+                    dangerouslySetInnerHTML={{ __html: form.content || '<p>Card content…</p>' }} />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button onClick={save} disabled={saving || !form.label.trim()}
+                  className="px-5 py-2 bg-[var(--primary)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50">
+                  {saving ? 'Saving…' : editingId === 'new' ? 'Add Card' : 'Save Changes'}
+                </button>
+                <button onClick={cancelEdit}
+                  className="px-5 py-2 text-sm font-semibold rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[var(--primary)] transition">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Add button */}
+          {editingId === null && (
+            <button onClick={startNew}
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-lg border border-dashed border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[var(--primary)] hover:text-[var(--primary)] transition">
+              <Plus className="w-4 h-4" />Add Card
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }

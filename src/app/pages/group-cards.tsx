@@ -1,73 +1,169 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { ArrowLeft, FileText, Download, Images } from 'lucide-react';
-import { Card } from '../components/ui/card';
-import { Button } from '../components/ui/button';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-
-interface GroupCard { id: number; day_label: string; sort_order: number; file_url: string; file_name: string; }
-
-function isPdf(name: string) { return (name ?? '').toLowerCase().endsWith('.pdf'); }
+import type { GroupCardContent } from '../../lib/supabase';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
+import { usePageTitle } from '../hooks/use-page-title';
 
 export function GroupCardsPage() {
-  const [cards, setCards] = useState<GroupCard[]>([]);
+  const [cards, setCards] = useState<GroupCardContent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeDay, setActiveDay] = useState(1);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [fading, setFading] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+
+  const { title, subtitle } = usePageTitle('groups', {
+    title: 'Group Cards',
+    subtitle: 'Daily small group activity cards',
+  });
 
   useEffect(() => {
-    supabase.from('group_cards').select('id,day_label,sort_order,file_url,file_name').order('sort_order')
-      .then(({ data }) => { setCards(data ?? []); setLoading(false); });
+    const cached = getCached<GroupCardContent[]>('group_cards_content');
+    if (cached) { setCards(cached); setLoading(false); }
+
+    cachedFetch(
+      'group_cards_content',
+      async () => {
+        const { data } = await supabase
+          .from('group_cards_content')
+          .select('id, day_number, card_number, label, content, content_color, label_color, bg_color, sort_order')
+          .order('day_number')
+          .order('sort_order');
+        return data;
+      },
+      TTL.GROUP_CARDS,
+    ).then(data => {
+      if (data) setCards(data);
+      setLoading(false);
+    });
   }, []);
 
+  const days = [...new Set(cards.map(c => c.day_number))].sort((a, b) => a - b);
+  const dayCards = cards.filter(c => c.day_number === activeDay).sort((a, b) => a.sort_order - b.sort_order);
+  const current = dayCards[cardIndex];
+
+  function selectDay(day: number) {
+    setActiveDay(day);
+    setCardIndex(0);
+  }
+
+  function goTo(idx: number) {
+    if (idx === cardIndex || idx < 0 || idx >= dayCards.length) return;
+    setFading(true);
+    setTimeout(() => { setCardIndex(idx); setFading(false); }, 150);
+  }
+
+  function navigate(dir: 'prev' | 'next') {
+    goTo(dir === 'next' ? cardIndex + 1 : cardIndex - 1);
+  }
+
+  function onTouchStart(e: React.TouchEvent) {
+    touchStartX.current = e.touches[0].clientX;
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (touchStartX.current === null) return;
+    const delta = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(delta) > 50) navigate(delta > 0 ? 'next' : 'prev');
+    touchStartX.current = null;
+  }
+
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 space-y-4">
       <div>
-        <Link to="/group-materials">
-          <Button variant="ghost" className="mb-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Groups
-          </Button>
-        </Link>
-        <h1>Group Cards</h1>
-        <p className="text-muted-foreground mt-1">Daily group activity cards</p>
+        <h1>{title}</h1>
+        <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
       </div>
 
       {loading && (
-        <Card className="p-8 text-center">
-          <p className="text-muted-foreground text-sm">Loading…</p>
-        </Card>
+        <div className="text-center py-12 text-sm text-muted-foreground">Loading…</div>
       )}
 
-      {!loading && cards.length === 0 && (
-        <Card className="p-8 text-center">
-          <Images className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground text-sm">Group cards will appear here once uploaded by the admin.</p>
-        </Card>
-      )}
-
-      {!loading && cards.map(card => (
-        <div key={card.id}>
-          <h2 className="text-base font-semibold mb-3">{card.day_label}</h2>
-          {isPdf(card.file_name) ? (
-            <Card className="p-5 flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-red-50 dark:bg-red-950 flex items-center justify-center shrink-0">
-                <FileText className="w-6 h-6 text-red-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{card.file_name}</p>
-                <p className="text-xs text-muted-foreground">PDF document</p>
-              </div>
-              <a href={card.file_url} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:opacity-90 transition shrink-0">
-                <Download className="w-4 h-4" />View
-              </a>
-            </Card>
-          ) : (
-            <Card className="overflow-hidden">
-              <img src={card.file_url} alt={`Group card — ${card.day_label}`} className="w-full h-auto" />
-            </Card>
-          )}
+      {!loading && days.length === 0 && (
+        <div className="text-center py-12 text-sm text-muted-foreground">
+          Group cards will appear here once added by the admin.
         </div>
-      ))}
+      )}
+
+      {!loading && days.length > 0 && (
+        <>
+          {/* Day tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {days.map(day => (
+              <button
+                key={day}
+                onClick={() => selectDay(day)}
+                className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition ${
+                  activeDay === day
+                    ? 'bg-primary text-primary-foreground'
+                    : 'border border-border text-foreground hover:border-primary'
+                }`}
+              >
+                Day {day}
+              </button>
+            ))}
+          </div>
+
+          {/* Card */}
+          {current && (
+            <div
+              className={`rounded-2xl overflow-hidden flex flex-col transition-opacity duration-150 ${fading ? 'opacity-0' : 'opacity-100'}`}
+              style={{ backgroundColor: current.bg_color, height: '340px' }}
+              onTouchStart={onTouchStart}
+              onTouchEnd={onTouchEnd}
+            >
+              {/* Label bar */}
+              <div className="px-5 py-3 shrink-0" style={{ backgroundColor: current.label_color }}>
+                <p className="font-bold text-base leading-snug text-white">{current.label}</p>
+              </div>
+              {/* Scrollable content */}
+              <div className="flex-1 overflow-y-auto p-5">
+                <div
+                  className="rich-text text-sm leading-relaxed"
+                  style={{ color: current.content_color }}
+                  dangerouslySetInnerHTML={{ __html: current.content }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Navigation */}
+          {dayCards.length > 0 && (
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => navigate('prev')}
+                disabled={cardIndex === 0}
+                className="p-2 rounded-lg border border-border disabled:opacity-30 hover:border-primary transition"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <div className="flex items-center gap-1.5">
+                {dayCards.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => goTo(i)}
+                    className={`rounded-full transition-all duration-150 ${
+                      i === cardIndex
+                        ? 'w-4 h-2 bg-primary'
+                        : 'w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                  />
+                ))}
+              </div>
+
+              <button
+                onClick={() => navigate('next')}
+                disabled={cardIndex === dayCards.length - 1}
+                className="p-2 rounded-lg border border-border disabled:opacity-30 hover:border-primary transition"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

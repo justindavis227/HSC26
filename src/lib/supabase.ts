@@ -104,6 +104,19 @@ export interface Theme {
   updated_at?: string;
 }
 
+export interface GroupCardContent {
+  id: string;
+  day_number: number;
+  card_number: number;
+  label: string;
+  content: string;
+  content_color: string;
+  label_color: string;
+  bg_color: string;
+  sort_order: number;
+  created_at?: string;
+}
+
 export interface CampusTime {
   id: number;
   campus_name: string;

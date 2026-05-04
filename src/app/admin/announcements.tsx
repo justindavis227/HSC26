@@ -169,6 +169,7 @@ export function AdminAnnouncements() {
     setExistingAttachments([]);
     setError('');
     setShowPreview(false);
+    editor?.commands.setContent('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -402,34 +403,71 @@ export function AdminAnnouncements() {
       {/* List */}
       {loading ? (
         <div className="text-sm text-gray-400 text-center py-8">Loading…</div>
-      ) : (
-        <div className="space-y-3">
-          {items.map(item => (
-            <div key={item.id}
-              className={`bg-white dark:bg-gray-900 rounded-xl border-l-4 border border-t-transparent border-r-transparent border-b-transparent p-4 flex gap-3 items-start ${editing?.id === item.id ? 'ring-2 ring-[var(--primary)]' : ''} ${item.priority === 'high' ? 'border-l-red-500' : 'border-l-[var(--primary)]'} bg-white dark:bg-gray-900 border-t border-r border-b border-gray-200 dark:border-gray-800`}>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${item.priority === 'high' ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400' : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400'}`}>
-                    {item.priority === 'high' ? 'URGENT' : 'INFO'}
+      ) : (() => {
+        const nowIso = new Date().toISOString();
+        const scheduledItems = items.filter(i => i.scheduled_at && i.scheduled_at > nowIso);
+        const publishedItems = items.filter(i => !i.scheduled_at || i.scheduled_at <= nowIso);
+
+        const ItemRow = ({ item }: { item: Announcement }) => (
+          <div
+            className={`bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 border-l-4 p-4 flex gap-3 items-start ${editing?.id === item.id ? 'ring-2 ring-[var(--primary)]' : ''} ${item.priority === 'high' ? 'border-l-red-500' : 'border-l-[var(--primary)]'}`}
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center flex-wrap gap-2 mb-1">
+                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${item.priority === 'high' ? 'bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-400' : 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-400'}`}>
+                  {item.priority === 'high' ? 'URGENT' : 'INFO'}
+                </span>
+                <span className="text-xs text-gray-400">{item.date}</span>
+                {item.scheduled_at && (
+                  <span className="text-xs text-amber-600 dark:text-amber-400">
+                    Sends {new Date(item.scheduled_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
                   </span>
-                  <span className="text-xs text-gray-400">{item.date}</span>
-                  {item.scheduled_at && <span className="text-xs text-amber-600 dark:text-amber-400">⏰ Scheduled</span>}
-                </div>
-                <div className="font-semibold text-sm text-gray-900 dark:text-white">{item.title}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{item.content}</div>
+                )}
               </div>
-              <div className="flex gap-1 shrink-0">
-                <button onClick={() => startEdit(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-[var(--primary)] hover:bg-blue-50 dark:hover:bg-blue-950 transition text-xs">Edit</button>
-                <button onClick={() => remove(item.id)} disabled={deleting === item.id}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition text-xs disabled:opacity-40">
-                  {deleting === item.id ? '…' : 'Del'}
-                </button>
+              <div className="font-semibold text-sm text-gray-900 dark:text-white">{item.title}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{item.content}</div>
+            </div>
+            <div className="flex gap-1 shrink-0">
+              <button onClick={() => startEdit(item)} className="p-1.5 rounded-lg text-gray-400 hover:text-[var(--primary)] hover:bg-blue-50 dark:hover:bg-blue-950 transition text-xs">Edit</button>
+              <button onClick={() => remove(item.id)} disabled={deleting === item.id}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 transition text-xs disabled:opacity-40">
+                {deleting === item.id ? '…' : 'Del'}
+              </button>
+            </div>
+          </div>
+        );
+
+        return (
+          <div className="space-y-6">
+            {scheduledItems.length > 0 && (
+              <div>
+                <h2 className="text-sm font-semibold text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1.5">
+                  <span>⏰</span> Scheduled ({scheduledItems.length})
+                </h2>
+                <div className="space-y-3">
+                  {scheduledItems.map(item => <ItemRow key={item.id} item={item} />)}
+                </div>
+              </div>
+            )}
+
+            <div>
+              {scheduledItems.length > 0 && (
+                <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Published</h2>
+              )}
+              <div className="space-y-3">
+                {publishedItems.map(item => <ItemRow key={item.id} item={item} />)}
+                {publishedItems.length === 0 && (
+                  <div className="text-sm text-gray-400 text-center py-8">No published announcements yet.</div>
+                )}
               </div>
             </div>
-          ))}
-          {items.length === 0 && <div className="text-sm text-gray-400 text-center py-8">No announcements yet.</div>}
-        </div>
-      )}
+
+            {items.length === 0 && (
+              <div className="text-sm text-gray-400 text-center py-8">No announcements yet.</div>
+            )}
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -20,11 +20,9 @@ export function AnnouncementsPage() {
 
   useEffect(() => {
     async function load() {
-      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from('announcements')
         .select('*, announcement_attachments(*)')
-        .or(`scheduled_at.is.null,scheduled_at.lte.${now}`)
         .order('date', { ascending: false })
         .order('created_at', { ascending: false });
 
@@ -34,7 +32,10 @@ export function AnnouncementsPage() {
         return;
       }
 
-      const items = (data ?? []) as AnnouncementWithAttachments[];
+      const now = new Date();
+      const items = ((data ?? []) as AnnouncementWithAttachments[]).filter(
+        (a) => !a.scheduled_at || new Date(a.scheduled_at) <= now
+      );
 
       // Capture which IDs are unread before marking them read
       const alreadyRead = new Set(getReadAnnouncements());

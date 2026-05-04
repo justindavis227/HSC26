@@ -54,7 +54,10 @@ export function HomePage() {
         .select('*')
         .eq('date', today)
         .order('created_at', { ascending: false });
-      const items = data ?? [];
+      const now = new Date();
+      const items = (data ?? []).filter(
+        (a) => !a.scheduled_at || new Date(a.scheduled_at) <= now
+      );
       setTodayAnnouncements(items);
 
       const { data: all } = await supabase.from('announcements').select('id');

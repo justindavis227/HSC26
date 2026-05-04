@@ -99,6 +99,10 @@ export function GroupCardsPage() {
     touchRef.current.didSwipe = false;
   }
 
+  function deckDisplayTitle(title: string) {
+    return title.replace(/^Day\s+\d+\s*[–—-]\s*/i, '');
+  }
+
   return (
     <>
       <div className="p-4 space-y-4">
@@ -110,21 +114,29 @@ export function GroupCardsPage() {
         {loading && <div className="text-center py-12 text-sm text-muted-foreground">Loading…</div>}
 
         {!loading && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {decks.map(deck => (
               <button
                 key={deck.id}
                 onClick={() => openDeck(deck)}
-                className="text-left rounded-2xl overflow-hidden bg-card border border-border hover:border-primary hover:shadow-md transition-all active:scale-95"
+                className="text-left rounded-2xl overflow-hidden transition-all active:scale-95 hover:brightness-110"
+                style={{
+                  background: `linear-gradient(135deg, ${deck.bar_color}28 0%, ${deck.bar_color}10 100%), #1a1a2e`,
+                  border: `1.5px solid ${deck.bar_color}40`,
+                }}
               >
                 <div className="p-4">
-                  <p className="font-bold text-sm leading-tight">{deck.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1 leading-snug">{deck.session_label}</p>
-                  <p className="text-xs text-muted-foreground mt-2 font-medium">
+                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+                    {deck.session_label}
+                  </p>
+                  <p style={{ color: 'white', fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.3 }}>
+                    {deckDisplayTitle(deck.title)}
+                  </p>
+                  <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.7rem', marginTop: '0.6rem', fontWeight: 500 }}>
                     {itemCounts[deck.id] != null ? `${itemCounts[deck.id]} cards` : '…'}
                   </p>
                 </div>
-                <div className="h-1.5" style={{ backgroundColor: deck.bar_color }} />
+                <div className="h-1" style={{ backgroundColor: deck.bar_color }} />
               </button>
             ))}
           </div>
@@ -157,7 +169,7 @@ export function GroupCardsPage() {
           <div className="flex-1 flex items-center justify-center px-4 pb-2 min-h-0">
             <div
               className="w-full max-w-sm cursor-pointer select-none"
-              style={{ perspective: '1200px', height: 'min(460px, 66vh)' }}
+              style={{ perspective: '1200px', height: 'min(530px, 72vh)' }}
               onClick={handleCardClick}
             >
               <div style={{
@@ -235,7 +247,7 @@ export function GroupCardsPage() {
                   </div>
                   <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                     <div
-                      className="rich-text"
+                      className="card-content"
                       style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.875rem', lineHeight: 1.65 }}
                       dangerouslySetInnerHTML={{ __html: currentItem.content }}
                     />

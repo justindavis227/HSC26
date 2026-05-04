@@ -55,6 +55,8 @@ export function HomePage() {
   const { myCampus, setMyCampus } = useMyCampus();
   const [campusPick, setCampusPick]       = useState(myCampus || '');
   const [editingCampus, setEditingCampus] = useState(false);
+  const [nowNextOpen, setNowNextOpen]     = useState(() => localStorage.getItem('dashboard_whats_happening_open') === 'true');
+  const [campusInfoOpen, setCampusInfoOpen] = useState(() => localStorage.getItem('dashboard_campus_info_open') === 'true');
 
   const [todayAnnouncements, setTodayAnnouncements] = useState<Announcement[]>([]);
   const [unreadCount, setUnreadCount]               = useState(0);
@@ -256,124 +258,155 @@ export function HomePage() {
         )}
       </Card>
 
-      {/* What's Happening Now / Up Next */}
+      {/* What's Happening Now / Up Next — collapsible */}
       {showNowNext && (
-        <Card className="p-4 bg-primary/5 border-primary/20">
-          <div className="flex items-center gap-2 mb-3">
-            <Clock className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold">What's Happening</span>
-          </div>
+        <div className="rounded-lg border border-primary/20 bg-primary/5 overflow-hidden">
+          <button
+            onClick={() => {
+              const next = !nowNextOpen;
+              setNowNextOpen(next);
+              localStorage.setItem('dashboard_whats_happening_open', String(next));
+            }}
+            className="w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left"
+            aria-expanded={nowNextOpen}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Clock className="w-4 h-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-tight">What's Happening</p>
+                <p className="text-xs text-muted-foreground truncate">{myCampus}</p>
+              </div>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-300 ${nowNextOpen ? 'rotate-180' : ''}`} />
+          </button>
 
-          {currentItem ? (
-            <div className="space-y-3">
-              <div>
-                <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-0.5">
-                  Right Now
-                </p>
-                <p className="text-sm font-semibold">{currentItem.activity}</p>
-                {currentItem.location && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3 h-3 shrink-0" />
-                    {currentItem.location}
-                  </p>
+          <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${nowNextOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+            <div className="overflow-hidden">
+              <div className="px-4 pb-4">
+                <div className="border-t border-primary/15 mb-3" />
+                {currentItem ? (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-0.5">Right Now</p>
+                      <p className="text-sm font-semibold">{currentItem.activity}</p>
+                      {currentItem.location && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3 shrink-0" />{currentItem.location}
+                        </p>
+                      )}
+                    </div>
+                    {nextItem ? (
+                      <div className="pt-3 border-t border-border/60">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Up Next</p>
+                        <p className="text-sm">
+                          {nextItem.activity}
+                          <span className="text-muted-foreground"> · {nextItem.time}</span>
+                        </p>
+                        {nextItem.location && (
+                          <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                            <MapPin className="w-3 h-3 shrink-0" />{nextItem.location}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground pt-3 border-t border-border/60">
+                        No more scheduled activities today.
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-sm text-muted-foreground">No activities right now — enjoy your free time!</p>
+                    {nextItem && (
+                      <div className="mt-3 pt-3 border-t border-border/60">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Coming Up</p>
+                        <p className="text-sm">
+                          {nextItem.activity}
+                          <span className="text-muted-foreground"> · {nextItem.time}</span>
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-              {nextItem ? (
-                <div className="pt-3 border-t border-border/60">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
-                    Up Next
-                  </p>
-                  <p className="text-sm">
-                    {nextItem.activity}
-                    <span className="text-muted-foreground"> · {nextItem.time}</span>
-                  </p>
-                  {nextItem.location && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      {nextItem.location}
-                    </p>
-                  )}
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground pt-3 border-t border-border/60">
-                  No more scheduled activities today.
-                </p>
-              )}
             </div>
-          ) : (
-            <div>
-              <p className="text-sm text-muted-foreground">
-                No activities right now — enjoy your free time!
-              </p>
-              {nextItem && (
-                <div className="mt-3 pt-3 border-t border-border/60">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
-                    Coming Up
-                  </p>
-                  <p className="text-sm">
-                    {nextItem.activity}
-                    <span className="text-muted-foreground"> · {nextItem.time}</span>
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
+          </div>
+        </div>
       )}
 
-      {/* Campus Quick Reference */}
+      {/* My Campus Info — collapsible */}
       {myCampus && campusDetails && (campusDetails.dining || campusDetails.location || campusDetails.male_sg_zones || campusDetails.female_sg_zones) && (
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold">{myCampus} Info</span>
+        <div className="rounded-lg border border-border bg-card overflow-hidden">
+          <button
+            onClick={() => {
+              const next = !campusInfoOpen;
+              setCampusInfoOpen(next);
+              localStorage.setItem('dashboard_campus_info_open', String(next));
+            }}
+            className="w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left"
+            aria-expanded={campusInfoOpen}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <MapPin className="w-4 h-4 text-primary shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold leading-tight">My Campus Info</p>
+                <p className="text-xs text-muted-foreground truncate">{myCampus}</p>
+              </div>
             </div>
-            <Link
-              to={`/campus-info/${campusSlug}`}
-              className="text-xs text-primary hover:underline"
-            >
-              More →
-            </Link>
+            <ChevronDown className={`w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-300 ${campusInfoOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${campusInfoOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+            <div className="overflow-hidden">
+              <div className="px-4 pb-4">
+                <div className="border-t border-border mb-3" />
+                <div className="space-y-2">
+                  {campusDetails.dining && (
+                    <div className="flex items-start gap-2">
+                      <Utensils className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                      <p className="text-xs">
+                        <span className="text-muted-foreground font-medium">Dining </span>
+                        {campusDetails.dining}
+                      </p>
+                    </div>
+                  )}
+                  {campusDetails.location && (
+                    <div className="flex items-start gap-2">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                      <p className="text-xs">
+                        <span className="text-muted-foreground font-medium">Campus Time </span>
+                        {campusDetails.location}
+                      </p>
+                    </div>
+                  )}
+                  {(campusDetails.male_sg_zones || campusDetails.female_sg_zones) && (
+                    <div className="flex items-start gap-2">
+                      <Users className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                      <p className="text-xs">
+                        <span className="text-muted-foreground font-medium">SG Zones </span>
+                        {campusDetails.male_sg_zones && (
+                          <span>M: {campusDetails.male_sg_zones.split('\n')[0]}</span>
+                        )}
+                        {campusDetails.male_sg_zones && campusDetails.female_sg_zones && (
+                          <span className="text-muted-foreground"> · </span>
+                        )}
+                        {campusDetails.female_sg_zones && (
+                          <span>F: {campusDetails.female_sg_zones.split('\n')[0]}</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                </div>
+                <Link
+                  to={`/campus-info/${campusSlug}`}
+                  className="text-xs text-primary hover:underline mt-3 inline-block"
+                >
+                  Full campus info →
+                </Link>
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            {campusDetails.dining && (
-              <div className="flex items-start gap-2">
-                <Utensils className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-xs">
-                  <span className="text-muted-foreground font-medium">Dining </span>
-                  {campusDetails.dining}
-                </p>
-              </div>
-            )}
-            {campusDetails.location && (
-              <div className="flex items-start gap-2">
-                <Clock className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-xs">
-                  <span className="text-muted-foreground font-medium">Campus Time </span>
-                  {campusDetails.location}
-                </p>
-              </div>
-            )}
-            {(campusDetails.male_sg_zones || campusDetails.female_sg_zones) && (
-              <div className="flex items-start gap-2">
-                <Users className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
-                <p className="text-xs">
-                  <span className="text-muted-foreground font-medium">SG Zones </span>
-                  {campusDetails.male_sg_zones && (
-                    <span>M: {campusDetails.male_sg_zones.split('\n')[0]}</span>
-                  )}
-                  {campusDetails.male_sg_zones && campusDetails.female_sg_zones && (
-                    <span className="text-muted-foreground"> · </span>
-                  )}
-                  {campusDetails.female_sg_zones && (
-                    <span>F: {campusDetails.female_sg_zones.split('\n')[0]}</span>
-                  )}
-                </p>
-              </div>
-            )}
-          </div>
-        </Card>
+        </div>
       )}
 
       {/* Today's Announcements */}

@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import type { Announcement, ScheduleItem, CampusTime } from '../../lib/supabase';
 import { campusSchedules } from '../data/campus-schedules';
 import { useMyCampus } from '../hooks/use-my-campus';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 const DASHBOARD_KEYS = [
   'dashboard_title',
@@ -72,12 +73,12 @@ export function HomePage() {
       });
   }, []);
 
-  // Today's announcements + unread count
+  // Today's announcements + unread count (not cached — must be real-time)
   useEffect(() => {
     async function load() {
       const { data } = await supabase
         .from('announcements')
-        .select('*')
+        .select('id, date, title, content, priority, scheduled_at, created_at')
         .eq('date', today)
         .order('created_at', { ascending: false });
       const now = new Date();
@@ -101,27 +102,54 @@ export function HomePage() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [today]);
 
-  // Today's schedule for myCampus
+  // Today's schedule for myCampus — shares cache with schedule page
   useEffect(() => {
     if (!myCampus || !isCampDay) { setTodaySchedule([]); return; }
-    supabase
-      .from('schedule_items')
-      .select('*')
-      .eq('campus', myCampus)
-      .eq('day', todayDayName)
-      .order('sort_order')
-      .then(({ data }) => setTodaySchedule(data ?? []));
-  }, [myCampus, todayDayName, isCampDay]);
+    let cancelled = false;
 
-  // Campus details from campus_times
+    const cacheKey = `schedule_items:${myCampus}`;
+    const cached = getCached<ScheduleItem[]>(cacheKey);
+    if (cached) setTodaySchedule(cached.filter(i => i.day === todayDayName));
+
+    cachedFetch(
+      cacheKey,
+      async () => {
+        const { data } = await supabase
+          .from('schedule_items')
+          .select('id, campus, day, day_order, time, activity, location, maps_url, sort_order')
+          .eq('campus', myCampus)
+          .order('day_order')
+          .order('sort_order');
+        return data;
+      },
+      TTL.SCHEDULE,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setTodaySchedule(data.filter(i => i.day === todayDayName));
+    });
+
+    return () => { cancelled = true; };
+  }, [myCampus, todayDayName, isCampDay]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Campus details — shares cache with campus-detail page
   useEffect(() => {
     if (!myCampus) { setCampusDetails(null); return; }
-    supabase
-      .from('campus_times')
-      .select('*')
-      .eq('campus_name', myCampus)
-      .single()
-      .then(({ data }) => setCampusDetails(data ?? null));
+    let cancelled = false;
+
+    const cacheKey = `campus_times:${myCampus}`;
+    const cached = getCached<CampusTime>(cacheKey);
+    if (cached) setCampusDetails(cached);
+
+    cachedFetch(
+      cacheKey,
+      async () => { const { data } = await supabase.from('campus_times').select('*').eq('campus_name', myCampus).single(); return data; },
+      TTL.CAMPUS_TIMES,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setCampusDetails(data);
+    });
+
+    return () => { cancelled = true; };
   }, [myCampus]);
 
   // Compute current + next schedule item

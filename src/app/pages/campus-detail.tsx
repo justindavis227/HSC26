@@ -5,6 +5,7 @@ import { campData } from '../data/camp-data';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { CampusTime } from '../../lib/supabase';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 export function CampusDetailPage() {
   const { campusName } = useParams<{ campusName: string }>();
@@ -17,15 +18,23 @@ export function CampusDetailPage() {
 
   useEffect(() => {
     if (!campusDisplayName) { setLoading(false); return; }
-    supabase
-      .from('campus_times')
-      .select('*')
-      .eq('campus_name', campusDisplayName)
-      .single()
-      .then(({ data }) => {
-        setDetails(data ?? null);
-        setLoading(false);
-      });
+    let cancelled = false;
+
+    const cacheKey = `campus_times:${campusDisplayName}`;
+    const cached = getCached<CampusTime>(cacheKey);
+    if (cached) { setDetails(cached); setLoading(false); }
+
+    cachedFetch(
+      cacheKey,
+      async () => { const { data } = await supabase.from('campus_times').select('*').eq('campus_name', campusDisplayName).single(); return data; },
+      TTL.CAMPUS_TIMES,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setDetails(data);
+      if (!cached) setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, [campusDisplayName]);
 
   if (!campusDisplayName) {

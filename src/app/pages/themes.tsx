@@ -4,24 +4,36 @@ import { Card } from '../components/ui/card';
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import type { Theme } from '../../lib/supabase';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
+function buildMap(rows: Theme[]): Record<string, string> {
+  const map: Record<string, string> = {};
+  rows.forEach(row => { map[row.day] = row.theme_name; });
+  return map;
+}
 
 export function ThemesPage() {
   const [themes, setThemes] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from('themes')
-      .select('*')
-      .order('sort_order')
-      .then(({ data }) => {
-        const map: Record<string, string> = {};
-        (data ?? []).forEach((row: Theme) => { map[row.day] = row.theme_name; });
-        setThemes(map);
-        setLoading(false);
-      });
+    let cancelled = false;
+    const cached = getCached<Theme[]>('themes');
+    if (cached) { setThemes(buildMap(cached)); setLoading(false); }
+
+    cachedFetch(
+      'themes',
+      async () => { const { data } = await supabase.from('themes').select('id, day, theme_name, sort_order').order('sort_order'); return data; },
+      TTL.THEMES,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setThemes(buildMap(data));
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
   return (

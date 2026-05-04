@@ -4,17 +4,28 @@ import { Link } from 'react-router';
 import { ChevronRight, User } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Speaker } from '../../lib/supabase';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 export function SpeakersPage() {
   const [speakers, setSpeakers] = useState<Speaker[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase
-      .from('speakers')
-      .select('*')
-      .order('sort_order')
-      .then(({ data }) => { setSpeakers(data ?? []); setLoading(false); });
+    let cancelled = false;
+    const cached = getCached<Speaker[]>('speakers');
+    if (cached) { setSpeakers(cached); setLoading(false); }
+
+    cachedFetch(
+      'speakers',
+      async () => { const { data } = await supabase.from('speakers').select('*').order('sort_order'); return data; },
+      TTL.SPEAKERS,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setSpeakers(data);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
   return (

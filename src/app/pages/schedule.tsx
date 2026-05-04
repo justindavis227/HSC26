@@ -9,6 +9,7 @@ import { useCampus } from '../context/campus-context';
 import { campusSchedules } from '../data/campus-schedules';
 import { usePageTitle } from '../hooks/use-page-title';
 import { MY_CAMPUS_KEY } from '../hooks/use-my-campus';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 // DO NOT append dates to day labels — days must always display as Monday/Tuesday/Wednesday/Thursday/Friday only.
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -32,17 +33,32 @@ export function SchedulePage() {
 
   useEffect(() => {
     if (!selectedCampus) { setItems([]); return; }
-    setLoading(true);
-    supabase
-      .from('schedule_items')
-      .select('*')
-      .eq('campus', selectedCampus)
-      .order('day_order')
-      .order('sort_order')
-      .then(({ data }) => {
-        setItems(data ?? []);
-        setLoading(false);
-      });
+    let cancelled = false;
+
+    const cacheKey = `schedule_items:${selectedCampus}`;
+    const cached = getCached<ScheduleItem[]>(cacheKey);
+    if (cached) { setItems(cached); setLoading(false); }
+    else { setLoading(true); }
+
+    cachedFetch(
+      cacheKey,
+      async () => {
+        const { data } = await supabase
+          .from('schedule_items')
+          .select('id, campus, day, day_order, time, activity, location, maps_url, sort_order')
+          .eq('campus', selectedCampus)
+          .order('day_order')
+          .order('sort_order');
+        return data;
+      },
+      TTL.SCHEDULE,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setItems(data);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, [selectedCampus]);
 
   const days = DAYS.filter((d) => items.some((i) => i.day === d));

@@ -3,6 +3,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { supabase } from '../../lib/supabase';
 import type { FAQ } from '../../lib/supabase';
 import { usePageTitle } from '../hooks/use-page-title';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 export function FAQPage() {
   const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -13,11 +14,21 @@ export function FAQPage() {
   });
 
   useEffect(() => {
-    supabase
-      .from('faqs')
-      .select('*')
-      .order('sort_order')
-      .then(({ data }) => { setFaqs(data ?? []); setLoading(false); });
+    let cancelled = false;
+    const cached = getCached<FAQ[]>('faqs');
+    if (cached) { setFaqs(cached); setLoading(false); }
+
+    cachedFetch(
+      'faqs',
+      async () => { const { data } = await supabase.from('faqs').select('id, question, answer, sort_order').order('sort_order'); return data; },
+      TTL.FAQS,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setFaqs(data);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
   return (

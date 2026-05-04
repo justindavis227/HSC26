@@ -5,22 +5,32 @@ import { ArrowLeft, Instagram, User } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import type { Speaker } from '../../lib/supabase';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 export function SpeakerDetailPage() {
   const { speakerName } = useParams();
   const [speaker, setSpeaker] = useState<Speaker | null | undefined>(undefined);
 
   useEffect(() => {
-    supabase
-      .from('speakers')
-      .select('*')
-      .order('sort_order')
-      .then(({ data }) => {
-        const found = (data ?? []).find(
-          (s: Speaker) => s.name.toLowerCase().replace(/\s+/g, '-') === speakerName
-        );
-        setSpeaker(found ?? null);
-      });
+    let cancelled = false;
+
+    function findSpeaker(list: Speaker[]) {
+      return list.find(s => s.name.toLowerCase().replace(/\s+/g, '-') === speakerName) ?? null;
+    }
+
+    const cached = getCached<Speaker[]>('speakers');
+    if (cached) setSpeaker(findSpeaker(cached));
+
+    cachedFetch(
+      'speakers',
+      async () => { const { data } = await supabase.from('speakers').select('*').order('sort_order'); return data; },
+      TTL.SPEAKERS,
+    ).then(data => {
+      if (cancelled) return;
+      setSpeaker(data ? findSpeaker(data) : (cached ? findSpeaker(cached) : null));
+    });
+
+    return () => { cancelled = true; };
   }, [speakerName]);
 
   if (speaker === undefined) {

@@ -5,6 +5,7 @@ import { Trophy, MapPin, Users, CircleDot, Circle, Zap, Gamepad2, Layers, Grid3x
 import { supabase } from '../../lib/supabase';
 import type { Tournament, Elective } from '../../lib/supabase';
 import { usePageTitle } from '../hooks/use-page-title';
+import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
 
 const TOURNAMENT_DAYS = ['Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 // DB values for electives day field — must match exactly
@@ -45,8 +46,21 @@ function TournamentsView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('tournaments').select('*').order('day_order').order('sort_order')
-      .then(({ data }) => { setItems(data ?? []); setLoading(false); });
+    let cancelled = false;
+    const cached = getCached<Tournament[]>('tournaments');
+    if (cached) { setItems(cached); setLoading(false); }
+
+    cachedFetch(
+      'tournaments',
+      async () => { const { data } = await supabase.from('tournaments').select('id, day, day_order, activity, sort_order').order('day_order').order('sort_order'); return data; },
+      TTL.TOURNAMENTS,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setItems(data);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) return <div className="text-sm text-muted-foreground text-center py-8">Loading…</div>;
@@ -94,8 +108,27 @@ function ElectivesView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from('electives').select('*').order('day_order').order('slot_order').order('theme_order')
-      .then(({ data }) => { setItems(data ?? []); setLoading(false); });
+    let cancelled = false;
+    const cached = getCached<Elective[]>('electives');
+    if (cached) { setItems(cached); setLoading(false); }
+
+    cachedFetch(
+      'electives',
+      async () => {
+        const { data } = await supabase
+          .from('electives')
+          .select('id, day, day_order, time_slot, slot_order, theme, theme_order, title, speaker, location, maps_url')
+          .order('day_order').order('slot_order').order('theme_order');
+        return data;
+      },
+      TTL.ELECTIVES,
+    ).then(data => {
+      if (cancelled) return;
+      if (data) setItems(data);
+      setLoading(false);
+    });
+
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) return <div className="text-sm text-muted-foreground text-center py-8">Loading…</div>;

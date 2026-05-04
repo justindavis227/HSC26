@@ -10,8 +10,9 @@ const CampusContext = createContext<CampusContextType | undefined>(undefined);
 const STORAGE_KEY = 'selected_campus';
 
 export function CampusProvider({ children }: { children: React.ReactNode }) {
+  // Fall back to myCampus for returning users who set a home campus but haven't browsed the schedule yet
   const [selectedCampus, setSelectedCampusState] = useState<string>(
-    () => localStorage.getItem(STORAGE_KEY) ?? ''
+    () => localStorage.getItem(STORAGE_KEY) || localStorage.getItem('myCampus') || ''
   );
 
   function setSelectedCampus(campus: string) {

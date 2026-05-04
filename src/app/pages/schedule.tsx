@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Clock, MapPin, ChevronDown } from 'lucide-react';
+import { Clock, MapPin, ChevronDown, Home } from 'lucide-react';
 import { Link } from 'react-router';
 import { supabase } from '../../lib/supabase';
 import type { ScheduleItem } from '../../lib/supabase';
 import { useCampus } from '../context/campus-context';
 import { campusSchedules } from '../data/campus-schedules';
 import { usePageTitle } from '../hooks/use-page-title';
+import { MY_CAMPUS_KEY } from '../hooks/use-my-campus';
 
 // DO NOT append dates to day labels — days must always display as Monday/Tuesday/Wednesday/Thursday/Friday only.
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -22,6 +23,12 @@ export function SchedulePage() {
   });
 
   const campusNames = campusSchedules.map((c) => c.name);
+  const myCampus = localStorage.getItem(MY_CAMPUS_KEY) ?? '';
+
+  // Default to home campus if nothing is selected yet this session
+  useEffect(() => {
+    if (!selectedCampus && myCampus) setSelectedCampus(myCampus);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!selectedCampus) { setItems([]); return; }
@@ -47,18 +54,36 @@ export function SchedulePage() {
         <p className="text-muted-foreground mt-1">{subtitle}</p>
       </div>
 
-      <div className="relative">
-        <select
-          value={selectedCampus}
-          onChange={(e) => setSelectedCampus(e.target.value)}
-          className="w-full px-4 py-3 pr-10 border border-border rounded-lg bg-card appearance-none cursor-pointer hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-        >
-          <option value="">Choose a campus...</option>
-          {campusNames.map((name) => (
-            <option key={name} value={name}>{name}</option>
-          ))}
-        </select>
-        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+      <div>
+        <div className="relative">
+          <select
+            value={selectedCampus}
+            onChange={(e) => setSelectedCampus(e.target.value)}
+            className="w-full px-4 py-3 pr-10 border border-border rounded-lg bg-card appearance-none cursor-pointer hover:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          >
+            <option value="">Choose a campus...</option>
+            {campusNames.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
+        </div>
+        {myCampus && (
+          <div className="flex items-center gap-1.5 mt-2 px-1">
+            <Home className="w-3 h-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">
+              Home campus: <span className="font-medium text-foreground">{myCampus}</span>
+            </span>
+            {selectedCampus !== myCampus && (
+              <button
+                onClick={() => setSelectedCampus(myCampus)}
+                className="text-xs text-primary hover:underline ml-1"
+              >
+                Switch to it
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {loading && (

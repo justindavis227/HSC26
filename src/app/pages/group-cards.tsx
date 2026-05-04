@@ -103,6 +103,22 @@ export function GroupCardsPage() {
     return title.replace(/^Day\s+\d+\s*[–—-]\s*/i, '');
   }
 
+  const DAY_LABELS: Record<number, string> = {
+    0: 'Pre-Camp',
+    1: 'Day 1',
+    2: 'Day 2',
+    3: 'Day 3',
+    4: 'Day 4',
+    5: 'Day 5',
+  };
+
+  const deckGroups: Record<number, GroupCardDeck[]> = {};
+  decks.forEach(deck => {
+    if (!deckGroups[deck.day_number]) deckGroups[deck.day_number] = [];
+    deckGroups[deck.day_number].push(deck);
+  });
+  const sortedDays = Object.keys(deckGroups).map(Number).sort((a, b) => a - b);
+
   return (
     <>
       <div className="p-4 space-y-4">
@@ -114,30 +130,42 @@ export function GroupCardsPage() {
         {loading && <div className="text-center py-12 text-sm text-muted-foreground">Loading…</div>}
 
         {!loading && (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {decks.map(deck => (
-              <button
-                key={deck.id}
-                onClick={() => openDeck(deck)}
-                className="text-left rounded-2xl overflow-hidden transition-all active:scale-95 hover:brightness-110"
-                style={{
-                  background: `linear-gradient(135deg, ${deck.bar_color}28 0%, ${deck.bar_color}10 100%), #1a1a2e`,
-                  border: `1.5px solid ${deck.bar_color}40`,
-                }}
-              >
-                <div className="p-4">
-                  <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                    {deck.session_label}
-                  </p>
-                  <p style={{ color: 'white', fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.3 }}>
-                    {deckDisplayTitle(deck.title)}
-                  </p>
-                  <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.7rem', marginTop: '0.6rem', fontWeight: 500 }}>
-                    {itemCounts[deck.id] != null ? `${itemCounts[deck.id]} cards` : '…'}
-                  </p>
+          <div className="space-y-5">
+            {sortedDays.map(day => (
+              <div key={day}>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-xs font-bold tracking-[0.15em] uppercase text-muted-foreground shrink-0">
+                    {DAY_LABELS[day] ?? `Day ${day}`}
+                  </span>
+                  <div className="flex-1 h-px bg-border" />
                 </div>
-                <div className="h-1" style={{ backgroundColor: deck.bar_color }} />
-              </button>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {deckGroups[day].map(deck => (
+                    <button
+                      key={deck.id}
+                      onClick={() => openDeck(deck)}
+                      className="text-left rounded-2xl overflow-hidden transition-all active:scale-95 hover:brightness-110"
+                      style={{
+                        background: `linear-gradient(135deg, ${deck.bar_color}28 0%, ${deck.bar_color}10 100%), #1a1a2e`,
+                        border: `1.5px solid ${deck.bar_color}40`,
+                      }}
+                    >
+                      <div className="p-4">
+                        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+                          {deck.session_label}
+                        </p>
+                        <p style={{ color: 'white', fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.3 }}>
+                          {deckDisplayTitle(deck.title)}
+                        </p>
+                        <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.7rem', marginTop: '0.6rem', fontWeight: 500 }}>
+                          {itemCounts[deck.id] != null ? `${itemCounts[deck.id]} cards` : '…'}
+                        </p>
+                      </div>
+                      <div className="h-1" style={{ backgroundColor: deck.bar_color }} />
+                    </button>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}

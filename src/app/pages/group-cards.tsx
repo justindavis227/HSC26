@@ -1,169 +1,302 @@
 import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import type { GroupCardContent } from '../../lib/supabase';
+import type { GroupCardDeck, GroupCardItem } from '../../lib/supabase';
 import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
-import { usePageTitle } from '../hooks/use-page-title';
 
 export function GroupCardsPage() {
-  const [cards, setCards] = useState<GroupCardContent[]>([]);
+  const [decks, setDecks] = useState<GroupCardDeck[]>([]);
+  const [allItems, setAllItems] = useState<GroupCardItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeDay, setActiveDay] = useState(1);
-  const [cardIndex, setCardIndex] = useState(0);
-  const [fading, setFading] = useState(false);
-  const touchStartX = useRef<number | null>(null);
 
-  const { title, subtitle } = usePageTitle('groups', {
-    title: 'Group Cards',
-    subtitle: 'Daily small group activity cards',
-  });
+  // viewer state
+  const [viewerDeck, setViewerDeck] = useState<GroupCardDeck | null>(null);
+  const [cardIndex, setCardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [fading, setFading] = useState(false);
+
+  const touchRef = useRef({ startX: 0, didSwipe: false });
 
   useEffect(() => {
-    const cached = getCached<GroupCardContent[]>('group_cards_content');
-    if (cached) { setCards(cached); setLoading(false); }
+    let cancelled = false;
+    const cachedDecks = getCached<GroupCardDeck[]>('group_card_decks');
+    const cachedItems = getCached<GroupCardItem[]>('group_card_items_all');
+    if (cachedDecks) setDecks(cachedDecks);
+    if (cachedItems) setAllItems(cachedItems);
+    if (cachedDecks && cachedItems) setLoading(false);
 
-    cachedFetch(
-      'group_cards_content',
-      async () => {
+    Promise.all([
+      cachedFetch('group_card_decks', async () => {
         const { data } = await supabase
-          .from('group_cards_content')
-          .select('id, day_number, card_number, label, content, content_color, label_color, bg_color, sort_order')
-          .order('day_number')
+          .from('group_card_decks')
+          .select('id, title, session_label, day_number, session_type, sort_order, bar_color')
           .order('sort_order');
         return data;
-      },
-      TTL.GROUP_CARDS,
-    ).then(data => {
-      if (data) setCards(data);
+      }, TTL.GROUP_CARDS),
+      cachedFetch('group_card_items_all', async () => {
+        const { data } = await supabase
+          .from('group_card_items')
+          .select('id, deck_id, title, subtitle, content, bg_color, sort_order')
+          .order('sort_order');
+        return data;
+      }, TTL.GROUP_CARDS),
+    ]).then(([decksData, itemsData]) => {
+      if (cancelled) return;
+      if (decksData) setDecks(decksData);
+      if (itemsData) setAllItems(itemsData);
       setLoading(false);
     });
+
+    return () => { cancelled = true; };
   }, []);
 
-  const days = [...new Set(cards.map(c => c.day_number))].sort((a, b) => a - b);
-  const dayCards = cards.filter(c => c.day_number === activeDay).sort((a, b) => a.sort_order - b.sort_order);
-  const current = dayCards[cardIndex];
+  // card counts per deck for thumbnails
+  const itemCounts: Record<string, number> = {};
+  allItems.forEach(item => {
+    itemCounts[item.deck_id] = (itemCounts[item.deck_id] ?? 0) + 1;
+  });
 
-  function selectDay(day: number) {
-    setActiveDay(day);
+  const viewerItems = viewerDeck
+    ? allItems.filter(i => i.deck_id === viewerDeck.id).sort((a, b) => a.sort_order - b.sort_order)
+    : [];
+  const currentItem = viewerItems[cardIndex];
+  const isLast = cardIndex === viewerItems.length - 1;
+
+  function openDeck(deck: GroupCardDeck) {
+    setViewerDeck(deck);
     setCardIndex(0);
+    setIsFlipped(false);
+    setFading(false);
   }
 
-  function goTo(idx: number) {
-    if (idx === cardIndex || idx < 0 || idx >= dayCards.length) return;
-    setFading(true);
-    setTimeout(() => { setCardIndex(idx); setFading(false); }, 150);
+  function closeDeck() {
+    setViewerDeck(null);
+    setIsFlipped(false);
   }
 
   function navigate(dir: 'prev' | 'next') {
-    goTo(dir === 'next' ? cardIndex + 1 : cardIndex - 1);
+    const newIdx = dir === 'next' ? cardIndex + 1 : cardIndex - 1;
+    if (newIdx < 0 || newIdx >= viewerItems.length) return;
+    setFading(true);
+    setIsFlipped(false);
+    setTimeout(() => { setCardIndex(newIdx); setFading(false); }, 200);
   }
 
-  function onTouchStart(e: React.TouchEvent) {
-    touchStartX.current = e.touches[0].clientX;
+  function handleTouchStart(e: React.TouchEvent) {
+    touchRef.current = { startX: e.touches[0].clientX, didSwipe: false };
   }
 
-  function onTouchEnd(e: React.TouchEvent) {
-    if (touchStartX.current === null) return;
-    const delta = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(delta) > 50) navigate(delta > 0 ? 'next' : 'prev');
-    touchStartX.current = null;
+  function handleTouchEnd(e: React.TouchEvent) {
+    const dx = touchRef.current.startX - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) {
+      touchRef.current.didSwipe = true;
+      navigate(dx > 0 ? 'next' : 'prev');
+    }
+  }
+
+  function handleCardClick() {
+    if (!touchRef.current.didSwipe) setIsFlipped(f => !f);
+    touchRef.current.didSwipe = false;
   }
 
   return (
-    <div className="p-4 space-y-4">
-      <div>
-        <h1>{title}</h1>
-        <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
-      </div>
-
-      {loading && (
-        <div className="text-center py-12 text-sm text-muted-foreground">Loading…</div>
-      )}
-
-      {!loading && days.length === 0 && (
-        <div className="text-center py-12 text-sm text-muted-foreground">
-          Group cards will appear here once added by the admin.
+    <>
+      <div className="p-4 space-y-4">
+        <div>
+          <h1>Group Cards</h1>
+          <p className="text-muted-foreground mt-1 text-sm">Tap a deck to open</p>
         </div>
-      )}
 
-      {!loading && days.length > 0 && (
-        <>
-          {/* Day tabs */}
-          <div className="flex gap-2 overflow-x-auto pb-1">
-            {days.map(day => (
+        {loading && <div className="text-center py-12 text-sm text-muted-foreground">Loading…</div>}
+
+        {!loading && (
+          <div className="grid grid-cols-2 gap-3">
+            {decks.map(deck => (
               <button
-                key={day}
-                onClick={() => selectDay(day)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap transition ${
-                  activeDay === day
-                    ? 'bg-primary text-primary-foreground'
-                    : 'border border-border text-foreground hover:border-primary'
-                }`}
+                key={deck.id}
+                onClick={() => openDeck(deck)}
+                className="text-left rounded-2xl overflow-hidden bg-card border border-border hover:border-primary hover:shadow-md transition-all active:scale-95"
               >
-                Day {day}
+                <div className="p-4">
+                  <p className="font-bold text-sm leading-tight">{deck.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-snug">{deck.session_label}</p>
+                  <p className="text-xs text-muted-foreground mt-2 font-medium">
+                    {itemCounts[deck.id] != null ? `${itemCounts[deck.id]} cards` : '…'}
+                  </p>
+                </div>
+                <div className="h-1.5" style={{ backgroundColor: deck.bar_color }} />
               </button>
             ))}
           </div>
+        )}
+      </div>
 
-          {/* Card */}
-          {current && (
-            <div
-              className={`rounded-2xl overflow-hidden flex flex-col transition-opacity duration-150 ${fading ? 'opacity-0' : 'opacity-100'}`}
-              style={{ backgroundColor: current.bg_color, height: '340px' }}
-              onTouchStart={onTouchStart}
-              onTouchEnd={onTouchEnd}
+      {/* ── Full-screen card viewer ── */}
+      {viewerDeck && currentItem && (
+        <div
+          className="fixed inset-0 z-[999] flex flex-col bg-black"
+          style={{ WebkitTapHighlightColor: 'transparent' }}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-4 pt-12 pb-2 shrink-0">
+            <div className="flex-1 min-w-0 pr-3">
+              <p className="text-white font-semibold text-sm truncate">{viewerDeck.title}</p>
+              <p className="text-white/40 text-xs truncate">{viewerDeck.session_label}</p>
+            </div>
+            <button
+              onClick={closeDeck}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition shrink-0"
             >
-              {/* Label bar */}
-              <div className="px-5 py-3 shrink-0" style={{ backgroundColor: current.label_color }}>
-                <p className="font-bold text-base leading-snug text-white">{current.label}</p>
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Flip card */}
+          <div className="flex-1 flex items-center justify-center px-4 pb-2 min-h-0">
+            <div
+              className="w-full max-w-sm cursor-pointer select-none"
+              style={{ perspective: '1200px', height: 'min(460px, 66vh)' }}
+              onClick={handleCardClick}
+            >
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                height: '100%',
+                transformStyle: 'preserve-3d',
+                WebkitTransformStyle: 'preserve-3d',
+                transition: fading ? 'opacity 0.2s' : 'transform 0.45s cubic-bezier(0.4,0,0.2,1)',
+                transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                opacity: fading ? 0 : 1,
+              }}>
+
+                {/* FRONT */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  borderRadius: '1.5rem',
+                  backgroundColor: currentItem.bg_color,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '2rem',
+                  textAlign: 'center',
+                  gap: '0.5rem',
+                }}>
+                  <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.65rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                    Card {cardIndex + 1} of {viewerItems.length}
+                  </span>
+                  <h2 style={{ color: 'white', fontSize: '2.25rem', fontWeight: 900, lineHeight: 1.05, letterSpacing: '-0.025em', marginTop: '0.5rem' }}>
+                    {currentItem.title}
+                  </h2>
+                  <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', fontWeight: 500, marginTop: '0.25rem' }}>
+                    {currentItem.subtitle}
+                  </p>
+                  <div style={{
+                    marginTop: '1.75rem',
+                    padding: '0.5rem 1.5rem',
+                    backgroundColor: 'rgba(255,255,255,0.12)',
+                    borderRadius: '9999px',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.1em',
+                    textTransform: 'uppercase',
+                  }}>
+                    Tap to reveal
+                  </div>
+                </div>
+
+                {/* BACK */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backfaceVisibility: 'hidden',
+                  WebkitBackfaceVisibility: 'hidden',
+                  transform: 'rotateY(180deg)',
+                  borderRadius: '1.5rem',
+                  backgroundColor: currentItem.bg_color,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '1.5rem',
+                }}>
+                  <div style={{ marginBottom: '0.875rem', paddingBottom: '0.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', flexShrink: 0 }}>
+                    <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
+                      {currentItem.subtitle}
+                    </p>
+                    <h3 style={{ color: 'white', fontSize: '1.05rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                      {currentItem.title}
+                    </h3>
+                  </div>
+                  <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                    <div
+                      className="rich-text"
+                      style={{ color: 'rgba(255,255,255,0.88)', fontSize: '0.875rem', lineHeight: 1.65 }}
+                      dangerouslySetInnerHTML={{ __html: currentItem.content }}
+                    />
+                  </div>
+                  <div style={{ textAlign: 'center', marginTop: '0.875rem', flexShrink: 0 }}>
+                    <span style={{
+                      display: 'inline-block',
+                      padding: '0.35rem 1rem',
+                      backgroundColor: 'rgba(255,255,255,0.08)',
+                      borderRadius: '9999px',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'rgba(255,255,255,0.4)',
+                      fontSize: '0.7rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                    }}>
+                      Tap to flip
+                    </span>
+                  </div>
+                </div>
+
               </div>
-              {/* Scrollable content */}
-              <div className="flex-1 overflow-y-auto p-5">
+            </div>
+          </div>
+
+          {/* Navigation row */}
+          <div className="flex items-center justify-between px-4 pb-10 pt-2 shrink-0">
+            <button
+              onClick={() => navigate('prev')}
+              disabled={cardIndex === 0}
+              className="flex items-center gap-1 px-4 py-2.5 rounded-xl bg-white/10 text-white text-sm font-semibold disabled:opacity-20 hover:bg-white/20 active:scale-95 transition"
+            >
+              <ChevronLeft className="w-4 h-4" />Back
+            </button>
+
+            <div className="flex items-center gap-1.5">
+              {viewerItems.map((_, i) => (
                 <div
-                  className="rich-text text-sm leading-relaxed"
-                  style={{ color: current.content_color }}
-                  dangerouslySetInnerHTML={{ __html: current.content }}
+                  key={i}
+                  className="rounded-full transition-all duration-200"
+                  style={{
+                    width: i === cardIndex ? 20 : 6,
+                    height: 6,
+                    backgroundColor: i === cardIndex ? 'white' : 'rgba(255,255,255,0.2)',
+                  }}
                 />
-              </div>
+              ))}
             </div>
-          )}
 
-          {/* Navigation */}
-          {dayCards.length > 0 && (
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => navigate('prev')}
-                disabled={cardIndex === 0}
-                className="p-2 rounded-lg border border-border disabled:opacity-30 hover:border-primary transition"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-
-              <div className="flex items-center gap-1.5">
-                {dayCards.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => goTo(i)}
-                    className={`rounded-full transition-all duration-150 ${
-                      i === cardIndex
-                        ? 'w-4 h-2 bg-primary'
-                        : 'w-2 h-2 bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                    }`}
-                  />
-                ))}
-              </div>
-
-              <button
-                onClick={() => navigate('next')}
-                disabled={cardIndex === dayCards.length - 1}
-                className="p-2 rounded-lg border border-border disabled:opacity-30 hover:border-primary transition"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-        </>
+            <button
+              onClick={() => isLast ? closeDeck() : navigate('next')}
+              className={`flex items-center gap-1 px-4 py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition ${
+                isLast ? 'bg-white text-black hover:bg-white/90' : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              {isLast ? 'Done' : <>Next<ChevronRight className="w-4 h-4" /></>}
+            </button>
+          </div>
+        </div>
       )}
-    </div>
+    </>
   );
 }

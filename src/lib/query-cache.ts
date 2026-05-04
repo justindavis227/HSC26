@@ -16,6 +16,10 @@ export const TTL = {
   GROUP_CARDS:  10 * 60 * 1000,
 };
 
+export function invalidateCache(key: string) {
+  store.delete(key);
+}
+
 /** Returns any cached value for key regardless of freshness (for SWR immediate display). */
 export function getCached<T>(key: string): T | null {
   return (store.get(key) as CacheEntry<T> | undefined)?.data ?? null;

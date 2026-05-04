@@ -104,14 +104,23 @@ export interface Theme {
   updated_at?: string;
 }
 
-export interface GroupCardContent {
+export interface GroupCardDeck {
   id: string;
+  title: string;
+  session_label: string;
   day_number: number;
-  card_number: number;
-  label: string;
+  session_type: string;
+  sort_order: number;
+  bar_color: string;
+  created_at?: string;
+}
+
+export interface GroupCardItem {
+  id: string;
+  deck_id: string;
+  title: string;
+  subtitle: string;
   content: string;
-  content_color: string;
-  label_color: string;
   bg_color: string;
   sort_order: number;
   created_at?: string;

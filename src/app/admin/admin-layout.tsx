@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet, Navigate, useNavigate } from 'react-router';
-import { LayoutDashboard, Bell, Calendar, MapPin, Map, Info, Users, Trophy, Phone, HelpCircle, LogOut, ArrowLeft, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, Bell, Calendar, MapPin, Map, Info, Users, Trophy, Phone, HelpCircle, Film, LogOut, ArrowLeft, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../context/auth-context';
 
 const navItems: { path: string; label: string; icon: LucideIcon; end?: boolean }[] = [
@@ -11,8 +11,9 @@ const navItems: { path: string; label: string; icon: LucideIcon; end?: boolean }
   { path: '/admin/camp-map',       label: 'Camp Map',     icon: Map },
   { path: '/admin/sessions',       label: 'Sessions',     icon: Info },
   { path: '/admin/groups',         label: 'Groups',       icon: Users },
-  { path: '/admin/activities',     label: 'Activities',   icon: Trophy },
-  { path: '/admin/contacts',       label: 'Contact Info', icon: Phone },
+  { path: '/admin/activities',         label: 'Activities',        icon: Trophy },
+  { path: '/admin/video-submissions',  label: 'Video Submissions', icon: Film },
+  { path: '/admin/contacts',           label: 'Contact Info',      icon: Phone },
   { path: '/admin/faq',            label: 'FAQ',          icon: HelpCircle },
 ];
 

@@ -126,6 +126,18 @@ export interface GroupCardItem {
   created_at?: string;
 }
 
+export interface VideoSubmission {
+  id: string;
+  name: string;
+  video_title: string;
+  phone_number: string;
+  file_url: string;
+  file_name: string;
+  day_number: number;
+  submitted_at: string;
+  file_size: number | null;
+}
+
 export interface CampusTime {
   id: number;
   campus_name: string;

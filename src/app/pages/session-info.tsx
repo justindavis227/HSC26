@@ -1,6 +1,6 @@
 import { campData } from '../data/camp-data';
 import { Card } from '../components/ui/card';
-import { Calendar, Users, TrendingUp, ArrowRight, Armchair, Lock, Sparkles, Mic2 } from 'lucide-react';
+import { Calendar, Users, TrendingUp, ArrowRight, Armchair, Lock, Sparkles, Mic2, Film } from 'lucide-react';
 import { Link } from 'react-router';
 import { useState } from 'react';
 import { PasswordModal } from '../components/password-modal';
@@ -143,6 +143,23 @@ export function SessionInfoPage() {
             <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />
           </div>
         </Card>
+
+        <Link to="/video-submission">
+          <Card className="p-6 bg-primary/5 hover:bg-primary/10 transition-colors cursor-pointer group">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Film className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg mb-1">Video Submission</h3>
+                  <p className="text-sm text-muted-foreground">Submit your video to be featured</p>
+                </div>
+              </div>
+              <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />
+            </div>
+          </Card>
+        </Link>
       </div>
 
       <PasswordModal open={passwordModalOpen} onOpenChange={setPasswordModalOpen} />

@@ -1,4 +1,4 @@
-import { Home, Calendar, Users, Map, Info, Phone, Bell, HelpCircle, Building2, Trophy } from 'lucide-react';
+import { Home, Calendar, Users, Map, Info, Phone, Bell, HelpCircle, Building2, Trophy, Film } from 'lucide-react';
 import { createBrowserRouter, Navigate } from 'react-router';
 import { DashboardLayout } from './components/dashboard-layout';
 import { HomePage } from './pages/home';
@@ -33,6 +33,8 @@ import { AdminCampMap } from './admin/camp-map';
 import { AdminContacts } from './admin/contacts';
 import { ActivitiesPage } from './pages/activities';
 import { GroupCardsPage } from './pages/group-cards';
+import { VideoSubmissionPage } from './pages/video-submission';
+import { AdminVideoSubmissions } from './admin/video-submissions';
 
 export const navigationItems = [
   { path: '/', label: 'Dashboard', icon: Home },
@@ -43,6 +45,7 @@ export const navigationItems = [
   { path: '/session-info', label: 'Sessions', icon: Info },
   { path: '/group-materials', label: 'Groups', icon: Users },
   { path: '/activities', label: 'Activities', icon: Trophy },
+  { path: '/video-submission', label: 'Video Submission', icon: Film },
   { path: '/contacts', label: 'Contact Info', icon: Phone },
   { path: '/faq', label: 'FAQ', icon: HelpCircle },
 ];
@@ -67,7 +70,8 @@ export const router = createBrowserRouter([
       { path: 'activities', element: <AdminActivities /> },
       { path: 'groups',     element: <AdminGroups /> },
       { path: 'camp-map',   element: <AdminCampMap /> },
-      { path: 'contacts',   element: <AdminContacts /> },
+      { path: 'contacts',         element: <AdminContacts /> },
+      { path: 'video-submissions', element: <AdminVideoSubmissions /> },
     ],
   },
 
@@ -94,6 +98,7 @@ export const router = createBrowserRouter([
       { path: 'campus-info/:campusName', element: <CampusDetailPage /> },
       { path: 'faq', element: <FAQPage /> },
       { path: 'secret-page', element: <SecretPage /> },
+      { path: 'video-submission', element: <VideoSubmissionPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

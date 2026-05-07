@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Film, Clock, CheckCircle, Upload, AlertCircle } from 'lucide-react';
+import { Film, Clock, CheckCircle, Upload, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router';
+import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
 
 const OPEN_HOUR = 11;
@@ -182,6 +184,12 @@ export function VideoSubmissionPage() {
   return (
     <div className="p-6 space-y-6 max-w-lg">
       <div>
+        <Link to="/session-info">
+          <Button variant="ghost" className="mb-2 -ml-3">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Sessions
+          </Button>
+        </Link>
         <h1>Video Submission</h1>
         <p className="text-muted-foreground mt-1">Submit your video for a chance to be featured!</p>
       </div>

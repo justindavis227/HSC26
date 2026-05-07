@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router';
+import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import type { GroupCardDeck, GroupCardItem } from '../../lib/supabase';
 import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
@@ -123,6 +125,12 @@ export function GroupCardsPage() {
     <>
       <div className="p-4 space-y-4">
         <div>
+          <Link to="/group-materials">
+            <Button variant="ghost" className="mb-2 -ml-3">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Groups
+            </Button>
+          </Link>
           <h1>Group Cards</h1>
           <p className="text-muted-foreground mt-1 text-sm">Tap a deck to open</p>
         </div>
@@ -181,13 +189,14 @@ export function GroupCardsPage() {
         >
           {/* Header */}
           <div className="px-4 pt-10 pb-2 shrink-0">
-            <button
+            <Button
+              variant="ghost"
               onClick={closeDeck}
-              className="flex items-center gap-1 text-white/50 hover:text-white/80 transition text-xs font-medium mb-2"
+              className="mb-2 -ml-3 text-white/60 hover:text-white hover:bg-white/10"
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Group Cards
-            </button>
+            </Button>
             <div className="flex items-center justify-between">
               <div className="flex-1 min-w-0 pr-3">
                 <p className="text-white font-semibold text-sm truncate">{viewerDeck.title}</p>

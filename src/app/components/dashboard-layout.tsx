@@ -39,7 +39,9 @@ function DashboardLayoutInner() {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 bg-card border-b border-border z-30 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/images/logo.png" alt="HSC 2026" className="h-8 object-contain" />
+          <Link to="/" onClick={() => setSidebarOpen(false)}>
+            <img src="/images/logo.png" alt="HSC 2026" className="h-8 object-contain" />
+          </Link>
         </div>
         <div className="flex items-center gap-1">
           <Button variant="ghost" size="sm" onClick={openSearch} className="p-2" aria-label="Search">
@@ -62,12 +64,14 @@ function DashboardLayoutInner() {
         )}
       >
         <div className="px-5 py-4 border-b border-border flex items-center justify-between">
-          <img
-            src="/images/logo.png"
-            alt="Southeast Camps — High School Camp"
-            style={{ width: '140px' }}
-            className="object-contain"
-          />
+          <Link to="/" onClick={() => setSidebarOpen(false)}>
+            <img
+              src="/images/logo.png"
+              alt="Southeast Camps — High School Camp"
+              style={{ width: '140px' }}
+              className="object-contain"
+            />
+          </Link>
           <Button variant="ghost" size="sm" onClick={openSearch} className="p-2 hidden lg:flex" aria-label="Search">
             <Search className="w-5 h-5" />
           </Button>

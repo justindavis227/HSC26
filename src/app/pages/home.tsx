@@ -416,7 +416,6 @@ export function HomePage() {
           <h2>Today's Announcements</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <WeatherWidget />
           {todayAnnouncements.length > 0 ? (
             todayAnnouncements.map((announcement) => (
               <Card
@@ -462,6 +461,8 @@ export function HomePage() {
           </p>
         </div>
       </Card>
+
+      <WeatherWidget />
 
       <InstallBanner />
     </div>

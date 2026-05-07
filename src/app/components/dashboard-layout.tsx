@@ -123,7 +123,7 @@ function DashboardLayoutInner() {
           })}
         </nav>
 
-        <div className="hidden lg:block absolute bottom-0 left-0 right-0 p-4 border-t border-border">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-border">
           <Button variant="outline" onClick={toggleTheme} className="w-full justify-start gap-2">
             {theme === 'light' ? (
               <>

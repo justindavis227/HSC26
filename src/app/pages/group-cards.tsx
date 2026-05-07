@@ -180,17 +180,26 @@ export function GroupCardsPage() {
           onTouchEnd={handleTouchEnd}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 pt-12 pb-2 shrink-0">
-            <div className="flex-1 min-w-0 pr-3">
-              <p className="text-white font-semibold text-sm truncate">{viewerDeck.title}</p>
-              <p className="text-white/40 text-xs truncate">{viewerDeck.session_label}</p>
-            </div>
+          <div className="px-4 pt-10 pb-2 shrink-0">
             <button
               onClick={closeDeck}
-              className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition shrink-0"
+              className="flex items-center gap-1 text-white/50 hover:text-white/80 transition text-xs font-medium mb-2"
             >
-              <X className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
+              Group Cards
             </button>
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0 pr-3">
+                <p className="text-white font-semibold text-sm truncate">{viewerDeck.title}</p>
+                <p className="text-white/40 text-xs truncate">{viewerDeck.session_label}</p>
+              </div>
+              <button
+                onClick={closeDeck}
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           {/* Flip card */}

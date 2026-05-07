@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Armchair, FileText, Download } from 'lucide-react';
+import { Armchair, FileText, Download, ArrowLeft } from 'lucide-react';
 import { Card } from '../components/ui/card';
+import { Link } from 'react-router';
+import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -38,6 +40,12 @@ export function SeatingChartPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
+        <Link to="/session-info">
+          <Button variant="ghost" className="mb-2 -ml-3">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Sessions
+          </Button>
+        </Link>
         <h1>Session Seating Chart</h1>
         <p className="text-muted-foreground mt-1">View the seating arrangements for the session hall</p>
       </div>

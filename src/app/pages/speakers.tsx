@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Card } from '../components/ui/card';
 import { Link } from 'react-router';
-import { ChevronRight, User } from 'lucide-react';
+import { ChevronRight, User, ArrowLeft } from 'lucide-react';
+import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
 import type { Speaker } from '../../lib/supabase';
 import { getCached, cachedFetch, TTL } from '../../lib/query-cache';
@@ -31,6 +32,12 @@ export function SpeakersPage() {
   return (
     <div className="p-6 space-y-6">
       <div>
+        <Link to="/session-info">
+          <Button variant="ghost" className="mb-2 -ml-3">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Sessions
+          </Button>
+        </Link>
         <h1>Session Speakers</h1>
         <p className="text-muted-foreground mt-1">Meet the speakers who will be sharing at camp this year</p>
       </div>

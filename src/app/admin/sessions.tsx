@@ -2,15 +2,17 @@ import { useState } from 'react';
 import { AdminSpeakers } from './speakers';
 import { AdminThemes } from './themes-editor';
 import { AdminSeatingCharts } from './seating-charts';
+import { AdminVideoSubmissions } from './video-submissions';
 import { PageTitleEditor } from './page-title-editor';
 
-type Subpage = 'speakers' | 'themes' | 'seating-chart' | 'secret-page';
+type Subpage = 'speakers' | 'themes' | 'seating-chart' | 'video-submissions' | 'secret-page';
 
 const SUBPAGES: { id: Subpage; label: string }[] = [
-  { id: 'speakers',      label: 'Session Speakers' },
-  { id: 'themes',        label: 'Themes' },
-  { id: 'seating-chart', label: 'Seating Chart' },
-  { id: 'secret-page',   label: 'Secret Page' },
+  { id: 'speakers',          label: 'Session Speakers' },
+  { id: 'themes',            label: 'Themes' },
+  { id: 'seating-chart',     label: 'Seating Chart' },
+  { id: 'video-submissions', label: 'Video Submissions' },
+  { id: 'secret-page',       label: 'Secret Page' },
 ];
 
 export function AdminSessions() {
@@ -42,10 +44,11 @@ export function AdminSessions() {
         ))}
       </div>
 
-      {subpage === 'speakers'      && <AdminSpeakers />}
-      {subpage === 'themes'        && <AdminThemes />}
-      {subpage === 'seating-chart' && <AdminSeatingCharts />}
-      {subpage === 'secret-page'   && <SecretPageInfo />}
+      {subpage === 'speakers'          && <AdminSpeakers />}
+      {subpage === 'themes'            && <AdminThemes />}
+      {subpage === 'seating-chart'     && <AdminSeatingCharts />}
+      {subpage === 'video-submissions' && <AdminVideoSubmissions />}
+      {subpage === 'secret-page'       && <SecretPageInfo />}
     </div>
   );
 }

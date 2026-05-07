@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router';
-import { Menu, X, Moon, Sun, Search } from 'lucide-react';
+import { Menu, X, Moon, Sun, Search, Cloud, CloudRain, CloudDrizzle, CloudSnow } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { navigationItems } from '../routes';
 import { Button } from './ui/button';
@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase';
 import { SearchProvider } from '../context/search-context';
 import { useSearch } from '../context/search-context';
 import { SearchOverlay } from './search-overlay';
+import { useWeather } from '../hooks/use-weather';
 
 // Inner layout — can safely use useSearch() since it's inside SearchProvider
 function DashboardLayoutInner() {
@@ -18,6 +19,18 @@ function DashboardLayoutInner() {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const { open: openSearch } = useSearch();
+  const { weather } = useWeather();
+
+  function weatherIcon(icon: string) {
+    const cls = 'w-4 h-4';
+    switch (icon) {
+      case 'Clear':   return <Sun className={`${cls} text-yellow-500`} />;
+      case 'Rain':    return <CloudRain className={`${cls} text-blue-500`} />;
+      case 'Drizzle': return <CloudDrizzle className={`${cls} text-blue-400`} />;
+      case 'Snow':    return <CloudSnow className={`${cls} text-blue-200`} />;
+      default:        return <Cloud className={`${cls} text-gray-400`} />;
+    }
+  }
 
   async function refreshUnread() {
     const { data } = await supabase.from('announcements').select('id');
@@ -44,11 +57,14 @@ function DashboardLayoutInner() {
           </Link>
         </div>
         <div className="flex items-center gap-1">
+          {weather && (
+            <div className="flex items-center gap-1 px-2 py-1">
+              {weatherIcon(weather.icon)}
+              <span className="text-sm font-medium">{weather.temp}°</span>
+            </div>
+          )}
           <Button variant="ghost" size="sm" onClick={openSearch} className="p-2" aria-label="Search">
             <Search className="w-5 h-5" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={toggleTheme} className="p-2" aria-label="Toggle theme">
-            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2">
             {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

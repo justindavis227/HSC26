@@ -126,6 +126,23 @@ export interface GroupCardItem {
   created_at?: string;
 }
 
+export interface DecisionGuide {
+  id: number;
+  baptism_class_info: string;
+  step1_description: string;
+  step2_decisions: string[];
+  step2_warning: string;
+  step2_form_url: string;
+  step3_description: string;
+  baptism_guide_url: string;
+  thirty_three_things_url: string;
+  next_step_image_1_url: string;
+  next_step_image_2_url: string;
+  next_step_image_3_url: string;
+  next_step_image_4_url: string;
+  updated_at?: string;
+}
+
 export interface VideoSubmission {
   id: string;
   name: string;

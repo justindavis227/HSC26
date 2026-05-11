@@ -152,20 +152,20 @@ export function GroupCardsPage() {
                     <button
                       key={deck.id}
                       onClick={() => openDeck(deck)}
-                      className="text-left rounded-2xl overflow-hidden transition-all active:scale-95 hover:brightness-110"
+                      className="text-left rounded-2xl overflow-hidden transition-all active:scale-95 hover:brightness-95 dark:hover:brightness-110"
                       style={{
-                        background: `linear-gradient(135deg, ${deck.bar_color}28 0%, ${deck.bar_color}10 100%), #1a1a2e`,
-                        border: `1.5px solid ${deck.bar_color}40`,
+                        background: `linear-gradient(135deg, ${deck.bar_color}26 0%, ${deck.bar_color}0f 100%), var(--card)`,
+                        border: `1.5px solid var(--border)`,
                       }}
                     >
                       <div className="p-4">
-                        <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
+                        <p style={{ color: 'var(--muted-foreground)', fontSize: '0.65rem', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
                           {deck.session_label}
                         </p>
-                        <p style={{ color: 'white', fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.3 }}>
+                        <p style={{ color: 'var(--foreground)', fontWeight: 700, fontSize: '0.875rem', lineHeight: 1.3 }}>
                           {deckDisplayTitle(deck.title)}
                         </p>
-                        <p style={{ color: 'rgba(255,255,255,0.28)', fontSize: '0.7rem', marginTop: '0.6rem', fontWeight: 500 }}>
+                        <p style={{ color: 'var(--muted-foreground)', fontSize: '0.7rem', marginTop: '0.6rem', fontWeight: 500 }}>
                           {itemCounts[deck.id] != null ? `${itemCounts[deck.id]} cards` : '…'}
                         </p>
                       </div>

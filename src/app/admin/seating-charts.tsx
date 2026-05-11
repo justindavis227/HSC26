@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Upload, X, FileText, Image } from 'lucide-react';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const DAY_ORDER: Record<string, number> = { Monday: 1, Tuesday: 2, Wednesday: 3, Thursday: 4, Friday: 5 };
@@ -35,6 +36,7 @@ function DayCard({
   const [uploading, setUploading] = useState(false);
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function handleFile(file: File) {
     setError('');
@@ -80,14 +82,17 @@ function DayCard({
     if (inputRef.current) inputRef.current.value = '';
   }
 
-  async function handleRemove() {
+  function handleRemove() {
     if (!chart) return;
+    setConfirmOpen(true);
+  }
+
+  async function doRemove() {
+    setConfirmOpen(false);
     setRemoving(true);
-    // Delete from storage
-    if (chart.file_path) {
+    if (chart?.file_path) {
       await supabase.storage.from('seating-charts').remove([chart.file_path]);
     }
-    // Delete DB row
     await supabase.from('seating_charts').delete().eq('day', day);
     onRemoved(day);
     setRemoving(false);
@@ -169,6 +174,13 @@ function DayCard({
         )}
         {error && <span className="text-xs text-red-500">{error}</span>}
       </div>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Remove Seating Chart"
+        message={`Remove the seating chart for ${day}? This cannot be undone.`}
+        onConfirm={doRemove}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

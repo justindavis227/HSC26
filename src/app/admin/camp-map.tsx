@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Upload, X, FileText, Image } from 'lucide-react';
 import { PageTitleEditor } from './page-title-editor';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 type MapMode = 'embed' | 'file';
 
@@ -21,6 +22,7 @@ export function AdminCampMap() {
   const [uploading, setUploading] = useState(false);
   const [uploadErr, setUploadErr] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   useEffect(() => {
     supabase.from('camp_info').select('key,value').in('key', [...KEYS]).then(({ data }) => {
@@ -62,8 +64,12 @@ export function AdminCampMap() {
     if (fileRef.current) fileRef.current.value = '';
   }
 
-  async function removeFile() {
-    if (!confirm('Remove the uploaded map file?')) return;
+  function removeFile() {
+    setConfirmOpen(true);
+  }
+
+  async function doRemoveFile() {
+    setConfirmOpen(false);
     await Promise.all([
       supabase.from('camp_info').upsert({ key: 'camp_map_file_url',  value: '', updated_at: new Date().toISOString() }, { onConflict: 'key' }),
       supabase.from('camp_info').upsert({ key: 'camp_map_file_name', value: '', updated_at: new Date().toISOString() }, { onConflict: 'key' }),
@@ -170,6 +176,13 @@ export function AdminCampMap() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Remove Map File"
+        message="Remove the uploaded map file? The map will switch back to embed mode."
+        onConfirm={doRemoveFile}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

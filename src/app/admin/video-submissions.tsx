@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Download, Trash2, Search, Film, RefreshCw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { VideoSubmission } from '../../lib/supabase';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 function formatSize(bytes: number | null | undefined): string {
   if (!bytes) return '–';
@@ -22,6 +23,7 @@ export function AdminVideoSubmissions() {
   const [search, setSearch] = useState('');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { load(); }, []);
 
@@ -35,13 +37,19 @@ export function AdminVideoSubmissions() {
     setLoading(false);
   }
 
-  async function handleDelete(s: VideoSubmission) {
-    if (!confirm(`Delete "${s.video_title}" by ${s.name}? This cannot be undone.`)) return;
-    setDeleting(s.id);
-    await supabase.storage.from('video-submissions').remove([s.file_url]);
-    await supabase.from('video_submissions').delete().eq('id', s.id);
-    setSubmissions(prev => prev.filter(x => x.id !== s.id));
-    setDeleting(null);
+  function handleDelete(s: VideoSubmission) {
+    setConfirmState({
+      title: 'Delete Video',
+      message: `Delete "${s.video_title}" by ${s.name}? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        setDeleting(s.id);
+        await supabase.storage.from('video-submissions').remove([s.file_url]);
+        await supabase.from('video_submissions').delete().eq('id', s.id);
+        setSubmissions(prev => prev.filter(x => x.id !== s.id));
+        setDeleting(null);
+      },
+    });
   }
 
   async function handleDownload(s: VideoSubmission) {
@@ -185,6 +193,13 @@ export function AdminVideoSubmissions() {
           ))}
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

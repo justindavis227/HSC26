@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { PageTitleEditor } from './page-title-editor';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 interface Contact {
   id: number;
@@ -37,6 +38,7 @@ export function AdminContacts() {
   const [saving, setSaving]     = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [error, setError]       = useState('');
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   async function load() {
     setLoading(true);
@@ -71,11 +73,17 @@ export function AdminContacts() {
     setSaving(false); setEditing(null); setForm(emptyForm); load();
   }
 
-  async function remove(id: number) {
-    if (!confirm('Delete this contact?')) return;
-    setDeleting(id);
-    await supabase.from('contacts').delete().eq('id', id);
-    setDeleting(null); load();
+  function remove(id: number) {
+    setConfirmState({
+      title: 'Delete Contact',
+      message: 'Are you sure you want to delete this contact? This cannot be undone.',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setDeleting(id);
+        await supabase.from('contacts').delete().eq('id', id);
+        setDeleting(null); load();
+      },
+    });
   }
 
   const f = (key: keyof Form) => (v: string) => setForm(prev => ({ ...prev, [key]: key === 'sort_order' ? Number(v) : v }));
@@ -159,6 +167,13 @@ export function AdminContacts() {
           )}
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

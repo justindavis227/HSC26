@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PageTitleEditor } from './page-title-editor';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   DndContext,
   closestCenter,
@@ -138,6 +139,7 @@ export function AdminSchedule() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [error, setError] = useState('');
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void; confirmLabel?: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -217,11 +219,18 @@ export function AdminSchedule() {
     load();
   }
 
-  async function remove(id: number) {
-    setDeleting(id);
-    await supabase.from('schedule_items').delete().eq('id', id);
-    setDeleting(null);
-    load();
+  function remove(id: number) {
+    setConfirmState({
+      title: 'Delete Activity',
+      message: 'Are you sure you want to delete this activity?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setDeleting(id);
+        await supabase.from('schedule_items').delete().eq('id', id);
+        setDeleting(null);
+        load();
+      },
+    });
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -262,9 +271,14 @@ export function AdminSchedule() {
     load();
   }
 
-  async function seedAllCampuses() {
-    if (!confirm('This will replace ALL schedule data in the database with the original data from camp-data.ts. Continue?')) return;
-    setSeeding(true);
+  function seedAllCampuses() {
+    setConfirmState({
+      title: 'Import All Campuses',
+      message: 'This will replace ALL schedule data in the database with the original data from camp-data.ts. Continue?',
+      confirmLabel: 'Import',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setSeeding(true);
     await supabase.from('schedule_items').delete().neq('id', 0);
     const rows: Omit<ScheduleItem, 'id' | 'created_at'>[] = [];
     for (const [campusName, days] of Object.entries(campData.schedules)) {
@@ -286,8 +300,10 @@ export function AdminSchedule() {
     for (let i = 0; i < rows.length; i += 100) {
       await supabase.from('schedule_items').insert(rows.slice(i, i + 100));
     }
-    setSeeding(false);
-    load();
+        setSeeding(false);
+        load();
+      },
+    });
   }
 
   return (
@@ -457,6 +473,14 @@ export function AdminSchedule() {
           </DndContext>
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        confirmLabel={confirmState?.confirmLabel}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

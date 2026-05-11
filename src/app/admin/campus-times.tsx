@@ -4,6 +4,7 @@ import type { CampusTime } from '../../lib/supabase';
 import { campData } from '../data/camp-data';
 import { Upload, X, FileText, Image } from 'lucide-react';
 import { PageTitleEditor } from './page-title-editor';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 const CAMPUSES = campData.campuses.map((c) => c.name);
 
@@ -68,6 +69,7 @@ function DocUploader({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   async function handleFile(file: File) {
     setUploadError('');
@@ -97,7 +99,12 @@ function DocUploader({
     if (inputRef.current) inputRef.current.value = '';
   }
 
-  async function handleRemove() {
+  function handleRemove() {
+    setConfirmOpen(true);
+  }
+
+  async function doRemove() {
+    setConfirmOpen(false);
     if (filePath) {
       await supabase.storage.from('campus-documents').remove([filePath]);
     }
@@ -169,6 +176,13 @@ function DocUploader({
       <p className="text-xs text-gray-400 mt-1.5">
         Upload will apply immediately. Click "Save Changes" to persist all other field edits.
       </p>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Remove Document"
+        message={`Remove "${fileName}"? This cannot be undone.`}
+        onConfirm={doRemove}
+        onCancel={() => setConfirmOpen(false)}
+      />
     </div>
   );
 }

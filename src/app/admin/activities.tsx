@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -64,6 +65,7 @@ function TournamentsEditor() {
   const [saving, setSaving]   = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [error, setError]     = useState('');
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor,  { activationConstraint: { distance: 5 } }),
@@ -95,11 +97,17 @@ function TournamentsEditor() {
     setSaving(false); setEditing(null); setForm(emptyT); load(day);
   }
 
-  async function remove(id: number) {
-    if (!confirm('Delete this activity?')) return;
-    setDeleting(id);
-    await supabase.from('tournaments').delete().eq('id', id);
-    setDeleting(null); load(day);
+  function remove(id: number) {
+    setConfirmState({
+      title: 'Delete Activity',
+      message: 'Are you sure you want to delete this activity?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setDeleting(id);
+        await supabase.from('tournaments').delete().eq('id', id);
+        setDeleting(null); load(day);
+      },
+    });
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -172,6 +180,13 @@ function TournamentsEditor() {
           </SortableContext>
         </DndContext>
       )}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }
@@ -289,6 +304,7 @@ function ElectivesEditor() {
   const [saving, setSaving]       = useState(false);
   const [deleting, setDeleting]   = useState<number | null>(null);
   const [error, setError]         = useState('');
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   async function load() {
     setLoading(true);
@@ -325,11 +341,17 @@ function ElectivesEditor() {
     setSaving(false); setEditing(null); setForm({ ...emptyE, day: filterDay }); load();
   }
 
-  async function remove(id: number) {
-    if (!confirm('Delete this elective?')) return;
-    setDeleting(id);
-    await supabase.from('electives').delete().eq('id', id);
-    setDeleting(null); load();
+  function remove(id: number) {
+    setConfirmState({
+      title: 'Delete Elective',
+      message: 'Are you sure you want to delete this elective?',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setDeleting(id);
+        await supabase.from('electives').delete().eq('id', id);
+        setDeleting(null); load();
+      },
+    });
   }
 
   function handleSlotReorder(slot: string, reordered: Elective[]) {
@@ -435,6 +457,13 @@ function ElectivesEditor() {
           {displayed.length === 0 && <div className="text-sm text-gray-400 text-center py-6">No electives for this day.</div>}
         </div>
       )}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

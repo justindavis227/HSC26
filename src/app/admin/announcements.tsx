@@ -11,6 +11,7 @@ import { supabase } from '../../lib/supabase';
 import type { Announcement, AnnouncementAttachment } from '../../lib/supabase';
 import { localDateString } from '../utils/date';
 import { PageTitleEditor } from './page-title-editor';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -124,6 +125,7 @@ export function AdminAnnouncements() {
   const [existingAttachments, setExistingAttachments] = useState<AnnouncementAttachment[]>([]);
   const [uploading, setUploading]   = useState(false);
   const fileInputRef                = useRef<HTMLInputElement>(null);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -206,9 +208,16 @@ export function AdminAnnouncements() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   }
 
-  async function removeExistingAttachment(att: AnnouncementAttachment) {
-    await supabase.from('announcement_attachments').delete().eq('id', att.id);
-    setExistingAttachments(prev => prev.filter(a => a.id !== att.id));
+  function removeExistingAttachment(att: AnnouncementAttachment) {
+    setConfirmState({
+      title: 'Remove Attachment',
+      message: `Remove "${att.file_name}"? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        await supabase.from('announcement_attachments').delete().eq('id', att.id);
+        setExistingAttachments(prev => prev.filter(a => a.id !== att.id));
+      },
+    });
   }
 
   async function save() {
@@ -252,13 +261,19 @@ export function AdminAnnouncements() {
     load();
   }
 
-  async function remove(id: string) {
-    if (!confirm('Delete this announcement?')) return;
-    setDeleting(id);
-    await supabase.from('announcements').delete().eq('id', id);
-    setDeleting(null);
-    if (editing?.id === id) startNew();
-    load();
+  function remove(id: string) {
+    setConfirmState({
+      title: 'Delete Announcement',
+      message: 'Are you sure you want to delete this announcement? This cannot be undone.',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setDeleting(id);
+        await supabase.from('announcements').delete().eq('id', id);
+        setDeleting(null);
+        if (editing?.id === id) startNew();
+        load();
+      },
+    });
   }
 
   const priorityColor = form.priority === 'high'
@@ -401,6 +416,14 @@ export function AdminAnnouncements() {
       </div>
 
       {/* List */}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
+
       {loading ? (
         <div className="text-sm text-gray-400 text-center py-8">Loading…</div>
       ) : (() => {

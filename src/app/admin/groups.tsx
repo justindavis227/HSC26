@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExt from '@tiptap/extension-underline';
@@ -150,6 +151,8 @@ function GroupCardsEditor() {
   const [cardForm, setCardForm] = useState<CardForm>(emptyCardForm());
   const [savingCard, setSavingCard] = useState(false);
 
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
+
   const cardEditor = useEditor({
     extensions: [StarterKit, UnderlineExt],
     content: '',
@@ -205,12 +208,18 @@ function GroupCardsEditor() {
     setSavingDeck(false); setEditingDeckId(null);
   }
 
-  async function deleteDeck(deck: GroupCardDeck) {
-    if (!confirm(`Delete "${deck.title}" and all its cards?`)) return;
-    await supabase.from('group_card_decks').delete().eq('id', deck.id);
-    setDecks(prev => prev.filter(d => d.id !== deck.id));
-    if (selectedDeckId === deck.id) { setSelectedDeckId(null); setItems([]); }
-    invalidateCache('group_card_decks'); invalidateCache('group_card_items_all');
+  function deleteDeck(deck: GroupCardDeck) {
+    setConfirmState({
+      title: 'Delete Deck',
+      message: `Delete "${deck.title}" and all its cards? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        await supabase.from('group_card_decks').delete().eq('id', deck.id);
+        setDecks(prev => prev.filter(d => d.id !== deck.id));
+        if (selectedDeckId === deck.id) { setSelectedDeckId(null); setItems([]); }
+        invalidateCache('group_card_decks'); invalidateCache('group_card_items_all');
+      },
+    });
   }
 
   // ── Card CRUD ──────────────────────────────────────────────────────────────
@@ -245,12 +254,18 @@ function GroupCardsEditor() {
     setSavingCard(false); cancelCardEdit();
   }
 
-  async function deleteCard(item: GroupCardItem) {
-    if (!confirm(`Delete "${item.title}"?`)) return;
-    await supabase.from('group_card_items').delete().eq('id', item.id);
-    setItems(prev => prev.filter(i => i.id !== item.id));
-    if (editingCardId === item.id) cancelCardEdit();
-    invalidateCache('group_card_items_all');
+  function deleteCard(item: GroupCardItem) {
+    setConfirmState({
+      title: 'Delete Card',
+      message: `Delete "${item.title}"? This cannot be undone.`,
+      onConfirm: async () => {
+        setConfirmState(null);
+        await supabase.from('group_card_items').delete().eq('id', item.id);
+        setItems(prev => prev.filter(i => i.id !== item.id));
+        if (editingCardId === item.id) cancelCardEdit();
+        invalidateCache('group_card_items_all');
+      },
+    });
   }
 
   function handleCardDragEnd({ active, over }: DragEndEvent) {
@@ -496,6 +511,14 @@ function GroupCardsEditor() {
 
       {/* suppress unused-var warning */}
       {selectedDeck && null}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

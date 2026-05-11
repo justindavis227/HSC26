@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ConfirmDialog } from '../components/ui/confirm-dialog';
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -64,6 +65,7 @@ export function AdminFAQ() {
   const [saving, setSaving]   = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
   const [error, setError]     = useState('');
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor,  { activationConstraint: { distance: 5 } }),
@@ -102,11 +104,17 @@ export function AdminFAQ() {
     setSaving(false); setEditing(null); setForm(empty); load();
   }
 
-  async function remove(id: number) {
-    if (!confirm('Delete this FAQ?')) return;
-    setDeleting(id);
-    await supabase.from('faqs').delete().eq('id', id);
-    setDeleting(null); load();
+  function remove(id: number) {
+    setConfirmState({
+      title: 'Delete FAQ',
+      message: 'Are you sure you want to delete this FAQ entry? This cannot be undone.',
+      onConfirm: async () => {
+        setConfirmState(null);
+        setDeleting(id);
+        await supabase.from('faqs').delete().eq('id', id);
+        setDeleting(null); load();
+      },
+    });
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -186,6 +194,13 @@ export function AdminFAQ() {
           </SortableContext>
         </DndContext>
       )}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ''}
+        message={confirmState?.message ?? ''}
+        onConfirm={() => confirmState?.onConfirm()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

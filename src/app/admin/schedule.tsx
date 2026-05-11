@@ -57,11 +57,13 @@ interface SortableItemProps {
   index: number;
   isEditing: boolean;
   deleting: boolean;
+  duplicating: boolean;
   onEdit: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }
 
-function SortableItem({ item, index, isEditing, deleting, onEdit, onDelete }: SortableItemProps) {
+function SortableItem({ item, index, isEditing, deleting, duplicating, onEdit, onDuplicate, onDelete }: SortableItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
@@ -117,6 +119,14 @@ function SortableItem({ item, index, isEditing, deleting, onEdit, onDelete }: So
           Edit
         </button>
         <button
+          onClick={onDuplicate}
+          disabled={duplicating}
+          className="p-1 rounded text-sky-400 hover:text-sky-600 transition text-xs disabled:opacity-40"
+          title="Duplicate"
+        >
+          {duplicating ? '…' : 'Dup'}
+        </button>
+        <button
           onClick={onDelete}
           disabled={deleting}
           className="p-1 rounded text-gray-400 hover:text-red-600 transition text-xs disabled:opacity-40"
@@ -138,6 +148,7 @@ export function AdminSchedule() {
   const [form, setForm] = useState<ItemForm>(emptyForm);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<number | null>(null);
+  const [duplicating, setDuplicating] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; onConfirm: () => void; confirmLabel?: string } | null>(null);
 
@@ -231,6 +242,41 @@ export function AdminSchedule() {
         load();
       },
     });
+  }
+
+  async function duplicate(item: ScheduleItem) {
+    setDuplicating(item.id);
+    const { data: newItem, error: err } = await supabase
+      .from('schedule_items')
+      .insert({
+        campus: item.campus,
+        day: item.day,
+        day_order: item.day_order,
+        time: item.time,
+        activity: item.activity,
+        location: item.location,
+        maps_url: item.maps_url ?? '',
+        sort_order: 9999,
+      })
+      .select()
+      .single();
+    if (err || !newItem) { setDuplicating(null); return; }
+
+    // Splice the copy immediately after the original, then normalize sort_orders
+    const origIdx = items.findIndex(i => i.id === item.id);
+    const spliced = [
+      ...items.slice(0, origIdx + 1),
+      newItem as ScheduleItem,
+      ...items.slice(origIdx + 1),
+    ];
+    const normalized = spliced.map((row, idx) => ({ ...row, sort_order: idx + 1 }));
+    setItems(normalized);
+    await persistSortOrders(normalized);
+    setDuplicating(null);
+
+    // Open the copy for editing right away
+    startEdit(newItem as ScheduleItem);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function handleDragEnd(event: DragEndEvent) {
@@ -464,7 +510,9 @@ export function AdminSchedule() {
                     index={i}
                     isEditing={editing?.id === item.id}
                     deleting={deleting === item.id}
+                    duplicating={duplicating === item.id}
                     onEdit={() => startEdit(item)}
+                    onDuplicate={() => duplicate(item)}
                     onDelete={() => remove(item.id)}
                   />
                 ))}

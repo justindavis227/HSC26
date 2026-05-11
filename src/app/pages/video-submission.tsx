@@ -14,6 +14,13 @@ function sanitize(str: string) {
   return str.trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '');
 }
 
+function formatPhone(digits: string) {
+  if (digits.length <= 2) return digits;
+  if (digits.length === 3) return `(${digits})`;
+  if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+}
+
 async function getVideoDuration(file: File): Promise<number> {
   return new Promise((resolve, reject) => {
     const video = document.createElement('video');
@@ -247,14 +254,13 @@ export function VideoSubmissionPage() {
           <label className="block text-sm font-medium mb-1.5">Phone Number</label>
           <input
             type="tel"
-            value={phone}
-            onChange={e => setPhone(e.target.value)}
+            value={formatPhone(phone)}
+            onChange={e => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
             placeholder="(555) 000-0000"
             disabled={uploading}
             required
             className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-60"
           />
-          <p className="text-xs text-muted-foreground mt-1">Used to prevent duplicate submissions</p>
         </div>
 
         <div>

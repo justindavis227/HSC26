@@ -58,7 +58,7 @@
 }
 
 /* Rich text rendering (live site announcement cards) */
-.rich-text p                { margin-bottom: 0.4rem; }
+.rich-text p                { margin-bottom: 0.75em; }
 .rich-text p:last-child     { margin-bottom: 0; }
 .rich-text strong           { font-weight: 700; }
 .rich-text em               { font-style: italic; }

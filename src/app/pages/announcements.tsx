@@ -92,6 +92,17 @@ export function AnnouncementsPage() {
     const pdfs = attachments.filter((a) => a.file_type === 'pdf');
     const bodyHtml = announcement.content_html || announcement.content;
 
+    function handleRichTextClick(e: React.MouseEvent<HTMLDivElement>) {
+      const anchor = (e.target as HTMLElement).closest('a');
+      if (!anchor) return;
+      e.preventDefault();
+      let href = anchor.getAttribute('href') ?? '';
+      if (href && !/^(https?:|mailto:|tel:|#|\/)/.test(href)) {
+        href = 'https://' + href;
+      }
+      if (href) window.open(href, '_blank', 'noopener,noreferrer');
+    }
+
     return (
       <div
         className={`relative rounded-lg border bg-card overflow-hidden border-l-4 ${
@@ -119,6 +130,7 @@ export function AnnouncementsPage() {
           <div
             className="rich-text text-sm text-muted-foreground mt-1"
             dangerouslySetInnerHTML={{ __html: bodyHtml }}
+            onClick={handleRichTextClick}
           />
 
           {/* Image attachments */}

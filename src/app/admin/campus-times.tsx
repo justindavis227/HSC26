@@ -217,7 +217,7 @@ export function AdminCampusTimes() {
         </p>
       </div>
 
-      <PageTitleEditor pageKey="campus_info" />
+      <PageTitleEditor pageKey="campus_info" defaults={{ title: 'Campus Information', subtitle: 'Check out your Campus Info (Location, Dining, Campus Time, Dorms, Group Zones)' }} />
 
       {/* Campus selector */}
       <div className="mb-5">

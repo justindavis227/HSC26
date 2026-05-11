@@ -7,12 +7,12 @@ const navItems: { path: string; label: string; icon: LucideIcon; end?: boolean }
   { path: '/admin',                label: 'Dashboard',    icon: LayoutDashboard, end: true },
   { path: '/admin/announcements',  label: 'Announcements', icon: Bell },
   { path: '/admin/schedule',       label: 'Schedule',     icon: Calendar },
-  { path: '/admin/campus-times',   label: 'Campus Info',  icon: MapPin },
+  { path: '/admin/campus-info',    label: 'Campus Info',  icon: MapPin },
   { path: '/admin/camp-map',       label: 'Camp Map',     icon: Map },
   { path: '/admin/sessions',       label: 'Sessions',     icon: Info },
   { path: '/admin/groups',         label: 'Groups',       icon: Users },
   { path: '/admin/activities',  label: 'Activities',   icon: Trophy },
-  { path: '/admin/contacts',    label: 'Contact Info', icon: Phone },
+  { path: '/admin/contact-info', label: 'Contact Info', icon: Phone },
   { path: '/admin/faq',            label: 'FAQ',          icon: HelpCircle },
 ];
 

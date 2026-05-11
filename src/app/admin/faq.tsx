@@ -128,7 +128,7 @@ export function AdminFAQ() {
         </button>
       </div>
 
-      <PageTitleEditor pageKey="faq" />
+      <PageTitleEditor pageKey="faq" defaults={{ title: 'Frequently Asked Questions', subtitle: 'Find answers to common questions about camp' }} />
 
       {/* Form */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6">

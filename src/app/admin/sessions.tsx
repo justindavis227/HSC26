@@ -25,7 +25,7 @@ export function AdminSessions() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage session-related content</p>
       </div>
 
-      <PageTitleEditor pageKey="sessions" />
+      <PageTitleEditor pageKey="sessions" defaults={{ title: 'Session Information', subtitle: 'Details about camp sessions' }} />
 
       {/* Subpage selector */}
       <div className="flex flex-wrap gap-2 mb-6">

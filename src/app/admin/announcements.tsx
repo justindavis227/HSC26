@@ -274,7 +274,7 @@ export function AdminAnnouncements() {
         <button onClick={startNew} className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition">+ New</button>
       </div>
 
-      <PageTitleEditor pageKey="announcements" />
+      <PageTitleEditor pageKey="announcements" defaults={{ title: 'Daily Announcements', subtitle: 'Stay updated with the latest camp news and important information' }} />
 
       {/* Form */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 mb-6 overflow-hidden">

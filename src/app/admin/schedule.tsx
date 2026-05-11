@@ -292,7 +292,7 @@ export function AdminSchedule() {
 
   return (
     <div className="max-w-4xl">
-      <PageTitleEditor pageKey="schedule" />
+      <PageTitleEditor pageKey="schedule" defaults={{ title: 'Schedule', subtitle: 'Select your campus for your specific schedule' }} />
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Schedule</h1>

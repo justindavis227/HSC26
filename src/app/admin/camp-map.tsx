@@ -86,7 +86,7 @@ export function AdminCampMap() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Choose how the map appears on the live Camp Map page.</p>
       </div>
 
-      <PageTitleEditor pageKey="camp_map" />
+      <PageTitleEditor pageKey="camp_map" defaults={{ title: 'Campus Map', subtitle: 'Interactive map of IU Bloomington campus' }} />
 
       {/* Mode toggle */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-4">

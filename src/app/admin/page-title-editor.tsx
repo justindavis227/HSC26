@@ -3,9 +3,12 @@ import { supabase } from '../../lib/supabase';
 
 const inputClass = 'w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]';
 
-export function PageTitleEditor({ pageKey }: { pageKey: string }) {
-  const [title, setTitle]       = useState('');
-  const [subtitle, setSubtitle] = useState('');
+export function PageTitleEditor({ pageKey, defaults }: {
+  pageKey: string;
+  defaults?: { title?: string; subtitle?: string };
+}) {
+  const [title, setTitle]       = useState(defaults?.title ?? '');
+  const [subtitle, setSubtitle] = useState(defaults?.subtitle ?? '');
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
   const [saved, setSaved]       = useState(false);
@@ -15,8 +18,8 @@ export function PageTitleEditor({ pageKey }: { pageKey: string }) {
       .in('key', [`page_title_${pageKey}`, `page_subtitle_${pageKey}`])
       .then(({ data }) => {
         (data ?? []).forEach(r => {
-          if (r.key === `page_title_${pageKey}`)    setTitle(r.value ?? '');
-          if (r.key === `page_subtitle_${pageKey}`) setSubtitle(r.value ?? '');
+          if (r.key === `page_title_${pageKey}`    && r.value) setTitle(r.value);
+          if (r.key === `page_subtitle_${pageKey}` && r.value) setSubtitle(r.value);
         });
         setLoading(false);
       });
@@ -50,13 +53,11 @@ export function PageTitleEditor({ pageKey }: { pageKey: string }) {
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Page Title</label>
           <input type="text" value={title} onChange={e => setTitle(e.target.value)}
             placeholder="e.g. Contact Information" className={inputClass} />
-          <p className="text-xs text-gray-400 mt-1 font-mono">key: page_title_{pageKey}</p>
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Subtitle</label>
           <input type="text" value={subtitle} onChange={e => setSubtitle(e.target.value)}
             placeholder="Subheading shown below the page title" className={inputClass} />
-          <p className="text-xs text-gray-400 mt-1 font-mono">key: page_subtitle_{pageKey}</p>
         </div>
       </div>
       <button onClick={save} disabled={saving}

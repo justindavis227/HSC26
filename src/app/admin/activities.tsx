@@ -457,7 +457,7 @@ export function AdminActivities() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage tournaments and electives</p>
       </div>
 
-      <PageTitleEditor pageKey="activities" />
+      <PageTitleEditor pageKey="activities" defaults={{ title: 'Activities', subtitle: 'Tournaments and electives for the week' }} />
 
       <div className="flex gap-2 mb-6">
         {TABS.map(({ id, label }) => (

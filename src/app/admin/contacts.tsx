@@ -87,7 +87,7 @@ export function AdminContacts() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage camp staff contacts shown on the live Contact Info page.</p>
       </div>
 
-      <PageTitleEditor pageKey="contacts" />
+      <PageTitleEditor pageKey="contacts" defaults={{ title: 'Contact Information', subtitle: 'Get in touch with camp staff and coordinators' }} />
 
       {/* Form */}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5 mb-6">

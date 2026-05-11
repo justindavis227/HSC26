@@ -65,13 +65,11 @@ function LinksEditor() {
         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Student Roster URL</label>
         <input type="url" value={rosterUrl} onChange={e => setRosterUrl(e.target.value)}
           placeholder="https://my.southeastchristian.org/page/1367" className={inputClass} />
-        <p className="text-xs text-gray-400 mt-1 font-mono">key: student_roster_url</p>
       </div>
       <div>
         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Group Tracker URL</label>
         <input type="url" value={trackerUrl} onChange={e => setTrackerUrl(e.target.value)}
           placeholder="https://my.southeastchristian.org/groupapp" className={inputClass} />
-        <p className="text-xs text-gray-400 mt-1 font-mono">key: group_tracker_url</p>
       </div>
       <div className="flex items-center gap-3">
         <button onClick={save} disabled={saving}
@@ -569,6 +567,7 @@ function DecisionGuideEditor() {
     if (!guide) return;
     setSaving(true);
     await supabase.from('decision_guide').update({
+      banner_visible: guide.banner_visible ?? true,
       baptism_class_info: guide.baptism_class_info,
       step1_description: guide.step1_description,
       step2_decisions: decisions,
@@ -608,6 +607,18 @@ function DecisionGuideEditor() {
 
       {/* Top banner */}
       <Section title="Baptism Class Banner">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Show Banner</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={guide.banner_visible !== false}
+            onClick={() => setGuide(prev => prev ? { ...prev, banner_visible: !(prev.banner_visible !== false) } : prev)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${guide.banner_visible !== false ? 'bg-[var(--primary)]' : 'bg-gray-300 dark:bg-gray-600'}`}
+          >
+            <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${guide.banner_visible !== false ? 'translate-x-5' : 'translate-x-0.5'}`} />
+          </button>
+        </div>
         <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Banner text</label>
         <input type="text" value={guide.baptism_class_info} onChange={e => updateField('baptism_class_info', e.target.value)}
           placeholder="Baptism Class — June 26th · 1:30–2:30pm…" className={inputClass} />
@@ -677,7 +688,6 @@ function DecisionGuideEditor() {
               className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-3">Next step images (2×2 grid)</label>
             <div className="grid grid-cols-2 gap-4">
               {imageKeys.map((key, i) => (
                 <div key={key} className="space-y-2">

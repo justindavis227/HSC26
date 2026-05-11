@@ -128,6 +128,7 @@ export interface GroupCardItem {
 
 export interface DecisionGuide {
   id: number;
+  banner_visible: boolean;
   baptism_class_info: string;
   step1_description: string;
   step2_decisions: string[];

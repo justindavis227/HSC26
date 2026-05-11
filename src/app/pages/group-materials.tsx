@@ -131,7 +131,7 @@ export function GroupMaterialsPage() {
                 </div>
                 <div>
                   <h3 className="text-lg mb-1">Decision Guide</h3>
-                  <p className="text-sm text-muted-foreground">Tool for leaders to help students make decisions for Christ</p>
+                  <p className="text-sm text-muted-foreground">Tool for leaders to help students</p>
                 </div>
               </div>
               <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />

@@ -9,7 +9,7 @@ export function SecretPage() {
 
   useEffect(() => {
     if (!isSecretPageUnlocked()) {
-      navigate('/session-info', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [navigate]);
 

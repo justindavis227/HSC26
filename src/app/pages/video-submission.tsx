@@ -191,10 +191,10 @@ export function VideoSubmissionPage() {
   return (
     <div className="p-6 space-y-6 max-w-lg">
       <div>
-        <Link to="/session-info">
+        <Link to="/">
           <Button variant="ghost" className="mb-2 -ml-3">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Sessions
+            Back
           </Button>
         </Link>
         <h1>Video Submission</h1>

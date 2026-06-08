@@ -3,9 +3,16 @@ import { Film, Clock, CheckCircle, Upload, AlertCircle, ArrowLeft } from 'lucide
 import { Link } from 'react-router';
 import { Button } from '../components/ui/button';
 import { supabase } from '../../lib/supabase';
+import {
+  DEFAULT_SUBMISSION_SETTINGS,
+  loadSubmissionSettings,
+  evaluateWindow,
+  formatHHMMLabel,
+  todayEastern,
+  type SubmissionSettings,
+  type WindowState,
+} from '../utils/submission-settings';
 
-const OPEN_HOUR = 11;
-const CLOSE_HOUR = 15;
 const MAX_DURATION_S = 30;
 const MAX_FILE_BYTES = 500 * 1024 * 1024;
 const ACCEPTED_TYPES = ['video/mp4', 'video/quicktime'];
@@ -32,19 +39,6 @@ async function getVideoDuration(file: File): Promise<number> {
   });
 }
 
-function getTimeState() {
-  const now = new Date();
-  const total = now.getHours() * 60 + now.getMinutes();
-  const open = OPEN_HOUR * 60;
-  const close = CLOSE_HOUR * 60;
-  const isOpen = total >= open && total < close;
-  let minsUntilOpen = 0;
-  if (!isOpen) {
-    minsUntilOpen = total < open ? open - total : 1440 - total + open;
-  }
-  return { isOpen, minsUntilOpen };
-}
-
 function formatCountdown(mins: number) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
@@ -61,24 +55,30 @@ export function VideoSubmissionPage() {
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [campStartDate, setCampStartDate] = useState<string | null>(null);
-  const [timeState, setTimeState] = useState(getTimeState);
+  const [settings, setSettings] = useState<SubmissionSettings>(DEFAULT_SUBMISSION_SETTINGS);
+  const [timeState, setTimeState] = useState<WindowState>(() => evaluateWindow(DEFAULT_SUBMISSION_SETTINGS));
 
   useEffect(() => {
     supabase.from('camp_info').select('value').eq('key', 'camp_start_date').maybeSingle()
       .then(({ data }) => setCampStartDate(data?.value ?? null));
+    loadSubmissionSettings().then((s) => {
+      setSettings(s);
+      setTimeState(evaluateWindow(s));
+    });
   }, []);
 
   useEffect(() => {
-    const id = setInterval(() => setTimeState(getTimeState()), 30_000);
+    setTimeState(evaluateWindow(settings));
+    const id = setInterval(() => setTimeState(evaluateWindow(settings)), 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [settings]);
 
   function getDayNumber(): number {
     if (!campStartDate) return 1;
     const [y, m, d] = campStartDate.split('-').map(Number);
     const start = new Date(y, m - 1, d);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const et = todayEastern();
+    const today = new Date(et.year, et.month - 1, et.day);
     const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     return Math.max(1, Math.min(5, diff + 1));
   }
@@ -206,19 +206,29 @@ export function VideoSubmissionPage() {
         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
           <p className="text-sm font-medium text-green-800 dark:text-green-300">
-            Submissions are open — closes at 3:00 PM
+            {settings.mode === 'scheduled'
+              ? `Submissions are open — closes at ${formatHHMMLabel(settings.closeTime)}`
+              : 'Submissions are open'}
           </p>
         </div>
       ) : (
         <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
           <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
-              Video submissions open daily from 11am to 3pm
-            </p>
-            <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-              Opens in {formatCountdown(timeState.minsUntilOpen)}
-            </p>
+            {settings.mode === 'closed' ? (
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                Video submissions are currently closed
+              </p>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                  Video submissions open daily from {formatHHMMLabel(settings.openTime)} to {formatHHMMLabel(settings.closeTime)}
+                </p>
+                <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
+                  Opens in {formatCountdown(timeState.minsUntilOpen)}
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}

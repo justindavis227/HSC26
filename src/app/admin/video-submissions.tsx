@@ -252,12 +252,18 @@ export function AdminVideoSubmissions() {
     return acc;
   }, {} as Record<number, number>);
 
-  const filtered = submissions.filter((s) =>
-    s.day_number === activeDay &&
-    (search === '' ||
-      s.name.toLowerCase().includes(search.toLowerCase()) ||
-      s.video_title.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = submissions.filter((s) => {
+    if (s.day_number !== activeDay) return false;
+    if (search === '') return true;
+    const q = search.toLowerCase().trim();
+    const qNum = q.replace(/^#/, ''); // allow "#002" or "002"
+    const seqPadded = String(dayOrder[s.id] ?? 0).padStart(3, '0');
+    return (
+      s.name.toLowerCase().includes(q) ||
+      s.video_title.toLowerCase().includes(q) ||
+      (qNum !== '' && seqPadded.includes(qNum))
+    );
+  });
 
   const visibleIds = filtered.map((s) => s.id);
   const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));

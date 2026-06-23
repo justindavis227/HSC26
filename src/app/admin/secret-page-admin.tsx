@@ -226,7 +226,7 @@ export function SecretPageAdmin() {
       <CodeEditor
         settingKey="secret_page_password_2"
         title="Challenge Code (2nd)"
-        help="The code students discover at camp and enter on the form inside the secret page. The first correct entry wins. Until this is set, all entries are denied. Matching is case-insensitive."
+        help="The code students discover at camp and enter on the form inside the secret page. The first correct entry wins. Until this is set, all entries are denied. Matching ignores capitalization, but spaces matter."
       />
 
       <SecretResponses />

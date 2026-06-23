@@ -59,8 +59,18 @@ export function AdminVideoSubmissions() {
   const [draft, setDraft] = useState<SubmissionSettings>(DEFAULT_SUBMISSION_SETTINGS);
   const [savingSettings, setSavingSettings] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
+  const [campStartDate, setCampStartDate] = useState<string | null>(null);
+  const [campEndDate, setCampEndDate] = useState<string | null>(null);
 
-  useEffect(() => { load(); loadSettings(); }, []);
+  useEffect(() => { load(); loadSettings(); loadCampDates(); }, []);
+
+  async function loadCampDates() {
+    const { data } = await supabase.from('camp_info').select('key,value').in('key', ['camp_start_date', 'camp_end_date']);
+    (data ?? []).forEach((r: { key: string; value: string }) => {
+      if (r.key === 'camp_start_date') setCampStartDate(r.value ?? null);
+      if (r.key === 'camp_end_date') setCampEndDate(r.value ?? null);
+    });
+  }
 
   async function load() {
     setLoading(true);
@@ -245,7 +255,7 @@ export function AdminVideoSubmissions() {
     ? settings.openTime !== draft.openTime || settings.closeTime !== draft.closeTime || settings.mode !== draft.mode
     : false;
 
-  const liveState = settings ? evaluateWindow(settings) : null;
+  const liveState = settings ? evaluateWindow(settings, { startDate: campStartDate, endDate: campEndDate }) : null;
 
   const countByDay = DAYS.reduce((acc, d) => {
     acc[d] = submissions.filter((s) => s.day_number === d).length;
@@ -377,10 +387,10 @@ export function AdminVideoSubmissions() {
 
           <p className="text-xs text-gray-400 dark:text-gray-500">
             {draft.mode === 'scheduled'
-              ? `Students can submit daily between ${formatHHMMLabel(draft.openTime)} and ${formatHHMMLabel(draft.closeTime)} Eastern.`
+              ? `Students can submit daily between ${formatHHMMLabel(draft.openTime)} and ${formatHHMMLabel(draft.closeTime)} Eastern, only on camp days (camp start–end). Closed before and after camp.`
               : draft.mode === 'open'
-                ? 'Submissions are forced OPEN — students can submit any time, ignoring the schedule.'
-                : 'Submissions are forced CLOSED — students cannot submit, ignoring the schedule.'}
+                ? 'Submissions are forced OPEN — students can submit any time, ignoring the schedule and camp dates.'
+                : 'Submissions are forced CLOSED — students cannot submit, ignoring the schedule and camp dates.'}
             {' '}Times are Eastern (camp time).
           </p>
         </div>

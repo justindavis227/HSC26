@@ -45,6 +45,16 @@ function formatCountdown(mins: number) {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** "2026-06-29" -> "June 29" */
+function formatCampDate(ymd: string | null): string {
+  if (!ymd) return '';
+  const [, m, d] = ymd.split('-').map(Number);
+  if (!m || !d) return '';
+  return `${MONTHS[m - 1]} ${d}`;
+}
+
 export function VideoSubmissionPage() {
   const [name, setName] = useState('');
   const [videoTitle, setVideoTitle] = useState('');
@@ -55,23 +65,27 @@ export function VideoSubmissionPage() {
   const [uploading, setUploading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [campStartDate, setCampStartDate] = useState<string | null>(null);
+  const [campEndDate, setCampEndDate] = useState<string | null>(null);
   const [settings, setSettings] = useState<SubmissionSettings>(DEFAULT_SUBMISSION_SETTINGS);
   const [timeState, setTimeState] = useState<WindowState>(() => evaluateWindow(DEFAULT_SUBMISSION_SETTINGS));
 
   useEffect(() => {
-    supabase.from('camp_info').select('value').eq('key', 'camp_start_date').maybeSingle()
-      .then(({ data }) => setCampStartDate(data?.value ?? null));
-    loadSubmissionSettings().then((s) => {
-      setSettings(s);
-      setTimeState(evaluateWindow(s));
-    });
+    supabase.from('camp_info').select('key,value').in('key', ['camp_start_date', 'camp_end_date'])
+      .then(({ data }) => {
+        (data ?? []).forEach((r) => {
+          if (r.key === 'camp_start_date') setCampStartDate(r.value ?? null);
+          if (r.key === 'camp_end_date') setCampEndDate(r.value ?? null);
+        });
+      });
+    loadSubmissionSettings().then((s) => setSettings(s));
   }, []);
 
   useEffect(() => {
-    setTimeState(evaluateWindow(settings));
-    const id = setInterval(() => setTimeState(evaluateWindow(settings)), 30_000);
+    const camp = { startDate: campStartDate, endDate: campEndDate };
+    setTimeState(evaluateWindow(settings, camp));
+    const id = setInterval(() => setTimeState(evaluateWindow(settings, camp)), 30_000);
     return () => clearInterval(id);
-  }, [settings]);
+  }, [settings, campStartDate, campEndDate]);
 
   function getDayNumber(): number {
     if (!campStartDate) return 1;
@@ -215,9 +229,17 @@ export function VideoSubmissionPage() {
         <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
           <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
           <div>
-            {settings.mode === 'closed' ? (
+            {timeState.status === 'mode-closed' ? (
               <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
                 Video submissions are currently closed
+              </p>
+            ) : timeState.status === 'before-camp' ? (
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                Video submissions open when camp begins{campStartDate ? ` on ${formatCampDate(campStartDate)}` : ''}
+              </p>
+            ) : timeState.status === 'after-camp' ? (
+              <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                Video submissions have ended — thanks for a great camp!
               </p>
             ) : (
               <>

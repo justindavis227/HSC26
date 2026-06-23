@@ -110,22 +110,64 @@ export function todayEastern(d: Date = new Date()): { year: number; month: numbe
   };
 }
 
+export type WindowStatus =
+  | 'open' // accepting submissions
+  | 'before-window' // scheduled, during camp, but outside today's daily window
+  | 'mode-closed' // forced closed
+  | 'before-camp' // scheduled, but camp hasn't started yet
+  | 'after-camp'; // scheduled, but camp has ended
+
 export interface WindowState {
   isOpen: boolean;
   minsUntilOpen: number; // meaningful only in scheduled mode while closed
+  status: WindowStatus;
 }
 
-export function evaluateWindow(s: SubmissionSettings, d: Date = new Date()): WindowState {
-  if (s.mode === 'open') return { isOpen: true, minsUntilOpen: 0 };
-  if (s.mode === 'closed') return { isOpen: false, minsUntilOpen: 0 };
+export interface CampDates {
+  startDate?: string | null; // "YYYY-MM-DD"
+  endDate?: string | null; // "YYYY-MM-DD"
+}
 
+/** "YYYY-MM-DD" -> comparable integer (e.g. 20260629), or null if unset/invalid. */
+function ymdToNum(value?: string | null): number | null {
+  if (!value) return null;
+  const [y, m, d] = value.split('-').map(Number);
+  if (!y || !m || !d) return null;
+  return y * 10000 + m * 100 + d;
+}
+
+/** Today's date in camp (Eastern) time as a comparable integer. */
+function easternYmdNum(d: Date): number {
+  const t = todayEastern(d);
+  return t.year * 10000 + t.month * 100 + t.day;
+}
+
+// Force Open and Force Closed are master overrides — they ignore both the daily
+// window and the camp dates. Scheduled follows the daily window AND only runs on
+// camp days (camp_start_date..camp_end_date, inclusive) when those are provided.
+export function evaluateWindow(
+  s: SubmissionSettings,
+  camp: CampDates = {},
+  d: Date = new Date()
+): WindowState {
+  if (s.mode === 'open') return { isOpen: true, minsUntilOpen: 0, status: 'open' };
+  if (s.mode === 'closed') return { isOpen: false, minsUntilOpen: 0, status: 'mode-closed' };
+
+  // Scheduled: gate by camp dates first.
+  const today = easternYmdNum(d);
+  const start = ymdToNum(camp.startDate);
+  const end = ymdToNum(camp.endDate);
+  if (start !== null && today < start) return { isOpen: false, minsUntilOpen: 0, status: 'before-camp' };
+  if (end !== null && today > end) return { isOpen: false, minsUntilOpen: 0, status: 'after-camp' };
+
+  // Within camp (or no camp dates set): apply the daily window.
   const now = nowMinutesEastern(d);
   const open = parseHHMM(s.openTime);
   const close = parseHHMM(s.closeTime);
   const isOpen = now >= open && now < close;
   let minsUntilOpen = 0;
   if (!isOpen) minsUntilOpen = now < open ? open - now : 1440 - now + open;
-  return { isOpen, minsUntilOpen };
+  return { isOpen, minsUntilOpen, status: isOpen ? 'open' : 'before-window' };
 }
 
 /** "11:00" -> "11:00 AM", "16:30" -> "4:30 PM" */

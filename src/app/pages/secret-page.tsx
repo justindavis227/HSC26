@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Card } from '../components/ui/card';
-import { Construction, Lock, Sparkles } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Construction, Lock, Sparkles, ArrowLeft } from 'lucide-react';
 import { isSecretPageUnlocked } from '../components/password-modal';
 
 export function SecretPage() {
@@ -17,6 +18,12 @@ export function SecretPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <Link to="/">
+        <Button variant="ghost" className="-ml-3">
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
+      </Link>
       <div className="text-center space-y-2">
         <div className="flex justify-center">
           <div className="relative">

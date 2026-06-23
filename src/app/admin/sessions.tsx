@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
 import { AdminSpeakers } from './speakers';
 import { AdminThemes } from './themes-editor';
 import { AdminSeatingCharts } from './seating-charts';
@@ -54,29 +55,94 @@ export function AdminSessions() {
 }
 
 
+const SECRET_PW_KEY = 'secret_page_password';
+
 function SecretPageInfo() {
+  const [password, setPassword] = useState('');
+  const [reveal, setReveal]     = useState(false);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
+  const [saved, setSaved]       = useState(false);
+  const [error, setError]       = useState('');
+
+  useEffect(() => {
+    supabase.from('camp_info').select('value').eq('key', SECRET_PW_KEY).maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) setPassword(data.value);
+        setLoading(false);
+      });
+  }, []);
+
+  async function save() {
+    const trimmed = password.trim();
+    if (!trimmed) { setError('Code cannot be empty.'); return; }
+    setError('');
+    setSaving(true);
+    const { error } = await supabase.from('camp_info').upsert(
+      { key: SECRET_PW_KEY, value: trimmed, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    setSaving(false);
+    if (error) { setError(error.message); return; }
+    setPassword(trimmed);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-6 max-w-2xl">
-      <h2 className="text-base font-semibold text-gray-800 dark:text-white mb-2">Secret Page</h2>
-      <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-        The secret page is password-protected. The current password is set in{' '}
-        <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono text-xs">
-          src/app/components/password-modal.tsx
-        </code>{' '}
-        as the{' '}
-        <code className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded font-mono text-xs">
-          CORRECT_PASSWORD
-        </code>{' '}
-        constant.
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-base font-semibold text-gray-800 dark:text-white">Secret Page Code</h2>
+        {saved && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Saved!</span>}
+      </div>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+        Set the code visitors must enter to unlock the secret page. Changes take effect
+        immediately on the live site — no redeploy needed. Students who already unlocked
+        the page stay unlocked.
       </p>
-      <a
-        href="/secret-page"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1.5 text-sm text-[var(--primary)] hover:underline"
-      >
-        View Secret Page →
-      </a>
+
+      {loading ? (
+        <p className="text-sm text-gray-400">Loading…</p>
+      ) : (
+        <>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Unlock code</label>
+          <div className="flex gap-2">
+            <input
+              type={reveal ? 'text' : 'password'}
+              value={password}
+              onChange={e => { setPassword(e.target.value); setError(''); }}
+              placeholder="Enter unlock code"
+              className="flex-1 px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            />
+            <button
+              type="button"
+              onClick={() => setReveal(r => !r)}
+              className="px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-[var(--primary)] transition"
+            >
+              {reveal ? 'Hide' : 'Show'}
+            </button>
+          </div>
+          {error && <p className="text-xs text-red-600 dark:text-red-400 mt-2">{error}</p>}
+
+          <div className="flex items-center gap-3 mt-4">
+            <button
+              onClick={save}
+              disabled={saving}
+              className="px-4 py-2 bg-[var(--primary)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
+            >
+              {saving ? 'Saving…' : 'Save Code'}
+            </button>
+            <a
+              href="/secret-page"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm text-[var(--primary)] hover:underline"
+            >
+              View Secret Page →
+            </a>
+          </div>
+        </>
+      )}
     </div>
   );
 }

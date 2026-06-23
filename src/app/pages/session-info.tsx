@@ -137,7 +137,7 @@ export function SessionInfoPage() {
               </div>
               <div>
                 <h3 className="text-lg mb-1">Secret Page</h3>
-                <p className="text-sm text-muted-foreground">Find all the clues to unlock this page</p>
+                <p className="text-sm text-muted-foreground">Find clues to unlock this page</p>
               </div>
             </div>
             <ArrowRight className="w-6 h-6 text-primary group-hover:translate-x-1 transition-transform" />

@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { supabase } from '../../lib/supabase';
 import {
   Dialog,
   DialogContent,
@@ -17,14 +18,28 @@ interface PasswordModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const CORRECT_PASSWORD = 'JeFFerSON';
+// Fallback code, used only if the live code can't be fetched from camp_info.
+// The active code is managed from the admin panel (Sessions → Secret Page)
+// and stored in camp_info under `secret_page_password`.
+const FALLBACK_PASSWORD = 'JeFFerSON';
+const SECRET_PW_KEY = 'secret_page_password';
 const UNLOCK_KEY = 'secret_page_unlocked';
 
 export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [correctPassword, setCorrectPassword] = useState(FALLBACK_PASSWORD);
   const navigate = useNavigate();
+
+  // Load the current code from the admin-managed setting whenever the modal opens.
+  useEffect(() => {
+    if (!open) return;
+    supabase.from('camp_info').select('value').eq('key', SECRET_PW_KEY).maybeSingle()
+      .then(({ data }) => {
+        if (data?.value) setCorrectPassword(data.value);
+      });
+  }, [open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +47,7 @@ export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
     setIsLoading(true);
 
     setTimeout(() => {
-      if (password === CORRECT_PASSWORD) {
+      if (password.trim() === correctPassword) {
         localStorage.setItem(UNLOCK_KEY, 'true');
         navigate('/secret-page');
         onOpenChange(false);
@@ -60,7 +75,7 @@ export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
             Enter Secret Code
           </DialogTitle>
           <DialogDescription>
-            You've found all the clues! Enter the 9-character code to unlock the secret page.
+            You've found all the clues! Enter the secret code to unlock the secret page.
           </DialogDescription>
         </DialogHeader>
 
@@ -72,7 +87,6 @@ export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError(''); }}
               className="text-center text-lg tracking-wider font-mono"
-              maxLength={9}
               autoFocus
               disabled={isLoading}
             />
@@ -83,7 +97,7 @@ export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
             <Button type="button" variant="outline" onClick={handleClose} disabled={isLoading}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isLoading || password.length !== 9} className="gap-2">
+            <Button type="submit" disabled={isLoading || password.trim().length === 0} className="gap-2">
               {isLoading ? 'Checking...' : (
                 <>
                   <Unlock className="w-4 h-4" />

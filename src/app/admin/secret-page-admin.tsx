@@ -13,7 +13,17 @@ interface SecretSubmission {
   code_attempt: string;
   is_correct: boolean;
   is_winner: boolean;
+  ticket_number: number | null;
+  tier: string | null;
   submitted_at: string;
+}
+
+const TIER_LABEL: Record<string, string> = {
+  gold: '🥇 Gold', silver: '🥈 Silver', bronze: '🥉 Bronze', blue: 'Camp Blue', sold_out: 'Sold out',
+};
+
+function pad4(n: number | null): string {
+  return n == null ? '—' : String(n).padStart(4, '0');
 }
 
 /** Reusable editor for a single camp_info code key (entry code, challenge code). */
@@ -87,6 +97,62 @@ function CodeEditor({ settingKey, title, help }: { settingKey: string; title: st
   );
 }
 
+/** Editor for the Gold-ticket GroupMe "Claim your spot" link. */
+function JoinUrlEditor() {
+  const [url, setUrl] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    supabase.from('camp_info').select('value').eq('key', 'secret_winner_join_url').maybeSingle()
+      .then(({ data }) => { if (data?.value) setUrl(data.value); setLoading(false); });
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    await supabase.from('camp_info').upsert(
+      { key: 'secret_winner_join_url', value: url.trim(), updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    );
+    setSaving(false);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-sm font-semibold text-gray-800 dark:text-white">Gold Ticket GroupMe Link</h3>
+        {saved && <span className="text-xs text-green-600 dark:text-green-400 font-medium">Saved!</span>}
+      </div>
+      <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+        The "Claim your spot" link on the Gold (winner) ticket only. Paste your GroupMe invite URL. Leave blank to hide the button.
+      </p>
+      {loading ? (
+        <p className="text-sm text-gray-400">Loading…</p>
+      ) : (
+        <>
+          <input
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://groupme.com/join_group/..."
+            className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+          />
+          <button
+            onClick={save}
+            disabled={saving}
+            className="mt-3 px-4 py-2 bg-[var(--primary)] text-white text-sm font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : 'Save Link'}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function SecretResponses() {
   const [rows, setRows] = useState<SecretSubmission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,6 +215,7 @@ function SecretResponses() {
                 <th className="py-2 pr-3 font-medium">Campus</th>
                 <th className="py-2 pr-3 font-medium">Code Entered</th>
                 <th className="py-2 pr-3 font-medium">Result</th>
+                <th className="py-2 pr-3 font-medium">Ticket</th>
                 <th className="py-2 pr-3 font-medium">When</th>
               </tr>
             </thead>
@@ -176,6 +243,15 @@ function SecretResponses() {
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
                         Denied
                       </span>
+                    )}
+                  </td>
+                  <td className="py-2 pr-3 whitespace-nowrap text-gray-700 dark:text-gray-300">
+                    {r.ticket_number != null ? (
+                      <span className="font-mono">No. {pad4(r.ticket_number)}{r.tier ? ` · ${TIER_LABEL[r.tier] ?? r.tier}` : ''}</span>
+                    ) : r.tier === 'sold_out' ? (
+                      <span className="text-gray-400">Sold out</span>
+                    ) : (
+                      <span className="text-gray-300 dark:text-gray-600">—</span>
                     )}
                   </td>
                   <td className="py-2 pr-3 text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -228,6 +304,8 @@ export function SecretPageAdmin() {
         title="Challenge Code (2nd)"
         help="The code students discover at camp and enter on the form inside the secret page. The first correct entry wins. Until this is set, all entries are denied. Matching ignores capitalization, but spaces matter."
       />
+
+      <JoinUrlEditor />
 
       <SecretResponses />
     </div>

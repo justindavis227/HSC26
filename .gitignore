@@ -7,3 +7,6 @@ dist-ssr
 .env.production
 .DS_Store
 .vercel
+
+# Design handoff reference (not shipped — tier logos copied to public/images/tickets/)
+public/design_handoff_secret_challenge_tickets/

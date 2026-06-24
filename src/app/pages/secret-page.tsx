@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
   Dialog,
@@ -10,15 +10,37 @@ import {
 } from '../components/ui/dialog';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Lock, Sparkles, ArrowLeft, Trophy, Award, Download, AlertCircle } from 'lucide-react';
+import { Lock, Sparkles, ArrowLeft, Download, AlertCircle, PartyPopper } from 'lucide-react';
 import { isSecretPageUnlocked } from '../components/password-modal';
 import { supabase } from '../../lib/supabase';
 import { campusSchedules } from '../data/campus-schedules';
-import { generateCertificate } from '../utils/certificate';
+import { SecretTicket, formatSerial } from '../components/secret-ticket';
+import { downloadNodeAsPng } from '../utils/ticket-image';
 
 const CAMPUSES = campusSchedules.map((c) => c.name);
+const DEVICE_KEY = 'hsc26_device_id';
 
-type Phase = 'form' | 'winner' | 'runner_up';
+function getDeviceId(): string {
+  try {
+    let id = localStorage.getItem(DEVICE_KEY);
+    if (!id) {
+      id = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem(DEVICE_KEY, id);
+    }
+    return id;
+  } catch {
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+}
+
+type Phase = 'form' | 'issued' | 'sold_out';
+
+interface ClaimResult {
+  status: 'issued' | 'denied' | 'sold_out';
+  ticket_number?: number;
+  tier?: string;
+  already?: boolean;
+}
 
 export function SecretPage() {
   const navigate = useNavigate();
@@ -35,11 +57,32 @@ export function SecretPage() {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState('');
 
+  const [ticketNumber, setTicketNumber] = useState<number | null>(null);
+  const [already, setAlready] = useState(false);
+  const [joinUrl, setJoinUrl] = useState('');
+  const [scale, setScale] = useState(1);
+
+  const exportRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!isSecretPageUnlocked()) navigate('/', { replace: true });
   }, [navigate]);
 
+  useEffect(() => {
+    const calc = () => setScale(Math.min(1, (window.innerWidth - 36) / 380));
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
+
+  useEffect(() => {
+    supabase.from('camp_info').select('value').eq('key', 'secret_winner_join_url').maybeSingle()
+      .then(({ data }) => { if (data?.value) setJoinUrl(data.value); });
+  }, []);
+
   if (!isSecretPageUnlocked()) return null;
+
+  const fullName = `${firstName} ${lastName}`.trim();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,20 +93,23 @@ export function SecretPage() {
     setError('');
     setSubmitting(true);
     try {
-      const { data, error: rpcError } = await supabase.rpc('submit_secret_response', {
+      const { data, error: rpcError } = await supabase.rpc('claim_secret_ticket', {
         p_first_name: firstName,
         p_last_name: lastName,
         p_campus: campus,
         p_code: code,
+        p_device_id: getDeviceId(),
       });
       if (rpcError) throw rpcError;
 
-      if (data === 'winner') {
-        setPhase('winner');
-      } else if (data === 'runner_up') {
-        setPhase('runner_up');
+      const result = (data ?? {}) as ClaimResult;
+      if (result.status === 'issued' && result.ticket_number) {
+        setTicketNumber(result.ticket_number);
+        setAlready(!!result.already);
+        setPhase('issued');
+      } else if (result.status === 'sold_out') {
+        setPhase('sold_out');
       } else {
-        // denied — log kept server-side; show popup and reset the code field
         setDeniedOpen(true);
         setCode('');
       }
@@ -74,67 +120,76 @@ export function SecretPage() {
     }
   }
 
-  async function handleDownload(winner: boolean) {
+  async function handleDownload() {
+    if (!exportRef.current) return;
     setDownloadError('');
     setDownloading(true);
     try {
-      await generateCertificate({ firstName, lastName, campus, winner });
+      const serial = ticketNumber ? formatSerial(ticketNumber) : '0000';
+      const safe = fullName.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'Camper';
+      await downloadNodeAsPng(exportRef.current, `HSC26_Ticket_${serial}_${safe}.png`);
     } catch {
-      setDownloadError('Could not generate the certificate. Please try again.');
+      setDownloadError('Could not save the image. Try a screenshot instead.');
     } finally {
       setDownloading(false);
     }
   }
 
-  // ---- Result screens ----
-  if (phase === 'winner' || phase === 'runner_up') {
-    const winner = phase === 'winner';
+  // ---- Sold out ----
+  if (phase === 'sold_out') {
     return (
       <div className="p-6 max-w-lg mx-auto">
-        <Card className={`p-8 text-center space-y-5 ${winner ? 'border-amber-300 dark:border-amber-700' : ''}`}>
-          <div className="flex justify-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${winner ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-primary/10'}`}>
-              {winner ? (
-                <Trophy className="w-8 h-8 text-amber-500" />
-              ) : (
-                <Award className="w-8 h-8 text-primary" />
-              )}
-            </div>
-          </div>
-
-          {winner ? (
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold">You did it — first place!</h1>
-              <p className="text-muted-foreground">
-                You were the very first to crack the code. Download your champion certificate below.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <h1 className="text-2xl font-bold">Congratulations… for not being first 🙂</h1>
-              <p className="text-muted-foreground">
-                Someone else beat you to it — but hey, take this completion trophy as your prize.
-              </p>
-            </div>
-          )}
-
-          <Button onClick={() => handleDownload(winner)} disabled={downloading} className="gap-2">
-            <Download className="w-4 h-4" />
-            {downloading ? 'Preparing…' : 'Download Certificate'}
-          </Button>
-
-          {downloadError && (
-            <p className="text-sm text-destructive flex items-center justify-center gap-1.5">
-              <AlertCircle className="w-4 h-4" /> {downloadError}
-            </p>
-          )}
-
-          <div>
-            <Link to="/" className="text-sm text-primary hover:underline">
-              Back to home
-            </Link>
-          </div>
+        <Card className="p-8 text-center space-y-4">
+          <h1 className="text-2xl font-bold">All tickets claimed</h1>
+          <p className="text-muted-foreground">
+            Every ticket has been awarded — all 3,500 are gone. You still cracked the code, and that's no small thing!
+          </p>
+          <Link to="/" className="text-sm text-primary hover:underline">Back to home</Link>
         </Card>
+      </div>
+    );
+  }
+
+  // ---- Issued: show the ticket ----
+  if (phase === 'issued' && ticketNumber) {
+    return (
+      <div className="p-4 sm:p-6 flex flex-col items-center gap-5">
+        <div className="text-center space-y-1">
+          <div className="flex justify-center">
+            <PartyPopper className="w-8 h-8 text-primary" />
+          </div>
+          <h1 className="text-xl font-bold">
+            {already ? 'Here’s your ticket' : 'You cracked the code!'}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {already
+              ? 'You already claimed your ticket — here it is again.'
+              : `Ticket No. ${formatSerial(ticketNumber)} is yours. Save it to your photos below.`}
+          </p>
+        </div>
+
+        {/* Visible ticket (with shimmer), scaled to fit narrow screens */}
+        <div style={{ width: 380 * scale, height: 800 * scale }}>
+          <div style={{ width: 380, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
+            <SecretTicket ticketNumber={ticketNumber} name={fullName} campus={campus} joinUrl={joinUrl || undefined} />
+          </div>
+        </div>
+
+        <Button onClick={handleDownload} disabled={downloading} className="gap-2">
+          <Download className="w-4 h-4" />
+          {downloading ? 'Saving…' : 'Save as PNG'}
+        </Button>
+        {downloadError && (
+          <p className="text-sm text-destructive flex items-center gap-1.5">
+            <AlertCircle className="w-4 h-4" /> {downloadError}
+          </p>
+        )}
+        <Link to="/" className="text-sm text-primary hover:underline">Back to home</Link>
+
+        {/* Hidden static copy for clean PNG capture (no shimmer) */}
+        <div ref={exportRef} style={{ position: 'fixed', left: -9999, top: 0 }} aria-hidden>
+          <SecretTicket ticketNumber={ticketNumber} name={fullName} campus={campus} joinUrl={joinUrl || undefined} forExport />
+        </div>
       </div>
     );
   }

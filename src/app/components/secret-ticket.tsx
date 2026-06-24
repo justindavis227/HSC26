@@ -172,11 +172,9 @@ export function SecretTicket({ ticketNumber, name, campus, awardDate, joinUrl, f
         <div style={{ marginTop: 7, fontSize: 11, fontWeight: 600, letterSpacing: '0.09em', textTransform: 'uppercase', color: t.sub }}>{campus} Campus</div>
 
         <div style={{ marginTop: 18, fontSize: 13, lineHeight: 1.55, maxWidth: 262, color: t.desc }}>{t.description}</div>
-      </div>
 
-      {/* Seal — fixed vertical position */}
-      <div style={{ position: 'absolute', top: 470, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
-        <div style={{ width: 104, height: 104, borderRadius: '50%', background: t.sealFill, boxShadow: t.sealShadow, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: t.sealIconColor }}>
+        {/* Seal — flows below the description so it can never overlap the text */}
+        <div style={{ marginTop: 40, width: 104, height: 104, borderRadius: '50%', background: t.sealFill, boxShadow: t.sealShadow, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: t.sealIconColor }}>
           <Icon size={33} strokeWidth={2} />
           <div style={{ marginTop: 6, fontSize: 8, fontWeight: 700, letterSpacing: tier === 'gold' ? '0.2em' : '0.24em', textTransform: 'uppercase' }}>{t.sealLabel}</div>
         </div>

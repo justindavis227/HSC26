@@ -156,8 +156,8 @@ export function SecretTicket({ ticketNumber, name, campus, awardDate, joinUrl, f
       <div style={{ position: 'absolute', top: 110, left: 22, right: 22, bottom: 22, border: `1.5px solid ${t.ink}8c`, borderRadius: 5, pointerEvents: 'none' }} />
       <div style={{ position: 'absolute', top: 116, left: 28, right: 28, bottom: 28, border: `1px solid ${t.ink}47`, borderRadius: 4, pointerEvents: 'none' }} />
 
-      {/* Content column */}
-      <div style={{ position: 'absolute', top: 96, left: 0, right: 0, bottom: 0, padding: '34px 42px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', zIndex: 2 }}>
+      {/* Top cluster — anchored to a fixed top so it never drifts on capture */}
+      <div style={{ position: 'absolute', top: 130, left: 42, right: 42, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.34em', textTransform: 'uppercase' }}>{t.eyebrow}</div>
         <div style={{ marginTop: 6, fontFamily: MONO, fontSize: 10, letterSpacing: '0.18em', color: t.sub }}>SECRET CHALLENGE · HSC26</div>
 
@@ -172,30 +172,31 @@ export function SecretTicket({ ticketNumber, name, campus, awardDate, joinUrl, f
         <div style={{ marginTop: 7, fontSize: 11, fontWeight: 600, letterSpacing: '0.09em', textTransform: 'uppercase', color: t.sub }}>{campus} Campus</div>
 
         <div style={{ marginTop: 18, fontSize: 13, lineHeight: 1.55, maxWidth: 262, color: t.desc }}>{t.description}</div>
+      </div>
 
-        <div style={{ flex: 1 }} />
-
-        {/* Seal */}
+      {/* Seal — fixed vertical position */}
+      <div style={{ position: 'absolute', top: 470, left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
         <div style={{ width: 104, height: 104, borderRadius: '50%', background: t.sealFill, boxShadow: t.sealShadow, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: t.sealIconColor }}>
           <Icon size={33} strokeWidth={2} />
           <div style={{ marginTop: 6, fontSize: 8, fontWeight: 700, letterSpacing: tier === 'gold' ? '0.2em' : '0.24em', textTransform: 'uppercase' }}>{t.sealLabel}</div>
         </div>
+      </div>
 
-        <div style={{ flex: 1 }} />
-
+      {/* Bottom block — anchored to the bottom so footer/serial always clear the border */}
+      <div style={{ position: 'absolute', bottom: 36, left: 42, right: 42, zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
         {showCta && (
           <a
             href={joinUrl}
             target="_blank"
             rel="noopener noreferrer"
-            style={{ background: t.cta!.bg, color: t.cta!.text, borderRadius: 999, padding: '13px 24px', fontSize: 13, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', marginBottom: 12 }}
+            data-cta="1"
+            style={{ background: t.cta!.bg, color: t.cta!.text, borderRadius: 999, padding: '13px 24px', fontSize: 13, fontWeight: 700, letterSpacing: '0.04em', textDecoration: 'none', marginBottom: 18 }}
           >
             CLAIM YOUR SPOT →
           </a>
         )}
-
         <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: '0.12em', color: t.sub }}>{t.footer}</div>
-        <div style={{ marginTop: 14, fontFamily: MONO, fontSize: 10, letterSpacing: '0.10em', color: t.sub }}>
+        <div style={{ marginTop: 12, fontFamily: MONO, fontSize: 10, letterSpacing: '0.10em', color: t.sub }}>
           No. {formatSerial(ticketNumber)} · AWARDED {date}
         </div>
       </div>

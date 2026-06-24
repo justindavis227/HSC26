@@ -15,7 +15,7 @@ import { isSecretPageUnlocked } from '../components/password-modal';
 import { supabase } from '../../lib/supabase';
 import { campusSchedules } from '../data/campus-schedules';
 import { SecretTicket, formatSerial } from '../components/secret-ticket';
-import { downloadNodeAsPng } from '../utils/ticket-image';
+import { downloadNodeAsPdf } from '../utils/ticket-image';
 
 const CAMPUSES = campusSchedules.map((c) => c.name);
 const DEVICE_KEY = 'hsc26_device_id';
@@ -127,9 +127,13 @@ export function SecretPage() {
     try {
       const serial = ticketNumber ? formatSerial(ticketNumber) : '0000';
       const safe = fullName.replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'Camper';
-      await downloadNodeAsPng(exportRef.current, `HSC26_Ticket_${serial}_${safe}.png`);
+      await downloadNodeAsPdf(
+        exportRef.current,
+        `HSC26_Ticket_${serial}_${safe}.pdf`,
+        { linkSelector: '[data-cta]', linkUrl: joinUrl || undefined },
+      );
     } catch {
-      setDownloadError('Could not save the image. Try a screenshot instead.');
+      setDownloadError('Could not generate the PDF. Try a screenshot instead.');
     } finally {
       setDownloading(false);
     }
@@ -164,7 +168,7 @@ export function SecretPage() {
           <p className="text-sm text-muted-foreground">
             {already
               ? 'You already claimed your ticket — here it is again.'
-              : `Ticket No. ${formatSerial(ticketNumber)} is yours. Save it to your photos below.`}
+              : `Ticket No. ${formatSerial(ticketNumber)} is yours. Download it below.`}
           </p>
         </div>
 
@@ -177,7 +181,7 @@ export function SecretPage() {
 
         <Button onClick={handleDownload} disabled={downloading} className="gap-2">
           <Download className="w-4 h-4" />
-          {downloading ? 'Saving…' : 'Save as PNG'}
+          {downloading ? 'Preparing…' : 'Download Ticket (PDF)'}
         </Button>
         {downloadError && (
           <p className="text-sm text-destructive flex items-center gap-1.5">

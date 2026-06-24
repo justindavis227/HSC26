@@ -10,7 +10,7 @@ import {
 } from '../components/ui/dialog';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Lock, Sparkles, ArrowLeft, Download, AlertCircle, PartyPopper } from 'lucide-react';
+import { Lock, ArrowLeft, Download, AlertCircle, PartyPopper } from 'lucide-react';
 import { isSecretPageUnlocked } from '../components/password-modal';
 import { supabase } from '../../lib/supabase';
 import { campusSchedules } from '../data/campus-schedules';
@@ -210,12 +210,7 @@ export function SecretPage() {
 
       <div className="text-center space-y-2">
         <div className="flex justify-center">
-          <div className="relative">
-            <div className="absolute inset-0 animate-pulse">
-              <Sparkles className="w-12 h-12 text-primary opacity-20" />
-            </div>
-            <Lock className="w-12 h-12 text-primary relative" />
-          </div>
+          <Lock className="w-12 h-12 text-primary" />
         </div>
         <h1 className="text-2xl font-bold">You're in!</h1>
         <p className="text-muted-foreground">

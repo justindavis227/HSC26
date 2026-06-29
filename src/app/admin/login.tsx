@@ -1,37 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../context/auth-context';
-import { supabase } from '../../lib/supabase';
-
-type Mode = 'signin' | 'signup';
 
 export function AdminLogin() {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [info, setInfo] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Self-service signup is intentionally removed. New admins are added by an
+  // existing admin via the Supabase dashboard (Authentication → Users → Add
+  // user). Public signups are also disabled at the project level.
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
-    setInfo('');
     setLoading(true);
-
-    if (mode === 'signup') {
-      const { error } = await supabase.auth.signUp({ email, password });
-      setLoading(false);
-      if (error) {
-        setError(error.message);
-      } else {
-        setInfo('Account created! Check your email to confirm, then sign in.');
-        setMode('signin');
-      }
-      return;
-    }
 
     const { error } = await signIn(email, password);
     setLoading(false);
@@ -61,12 +46,6 @@ export function AdminLogin() {
               {error}
             </div>
           )}
-          {info && (
-            <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 text-sm rounded-lg px-4 py-3">
-              {info}
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
             <input
@@ -95,18 +74,8 @@ export function AdminLogin() {
             disabled={loading}
             className="w-full py-2.5 bg-[var(--primary)] text-white font-semibold rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
-            {loading ? (mode === 'signup' ? 'Creating account…' : 'Signing in…') : (mode === 'signup' ? 'Create Account' : 'Sign In')}
+            {loading ? 'Signing in…' : 'Sign In'}
           </button>
-
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => { setMode(m => m === 'signin' ? 'signup' : 'signin'); setError(''); setInfo(''); }}
-              className="text-xs text-gray-400 hover:text-[var(--primary)] transition underline"
-            >
-              {mode === 'signin' ? 'Need to create an account?' : 'Already have an account? Sign in'}
-            </button>
-          </div>
         </form>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../../lib/supabase';
 import {
@@ -18,36 +18,30 @@ interface PasswordModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Fallback code, used only if the live code can't be fetched from camp_info.
-// The active code is managed from the admin panel (Sessions → Secret Page)
-// and stored in camp_info under `secret_page_password`.
-const FALLBACK_PASSWORD = 'JeFFerSON';
-const SECRET_PW_KEY = 'secret_page_password';
+// The unlock code is verified SERVER-SIDE via the verify_secret_page_code RPC.
+// It is never fetched into the browser (the camp_info `secret_page_password`
+// key is no longer readable with the public anon key). The code is managed
+// from the admin panel (Sessions → Secret Page) and stored in camp_info.
 const UNLOCK_KEY = 'secret_page_unlocked';
 
 export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [correctPassword, setCorrectPassword] = useState(FALLBACK_PASSWORD);
   const navigate = useNavigate();
 
-  // Load the current code from the admin-managed setting whenever the modal opens.
-  useEffect(() => {
-    if (!open) return;
-    supabase.from('camp_info').select('value').eq('key', SECRET_PW_KEY).maybeSingle()
-      .then(({ data }) => {
-        if (data?.value) setCorrectPassword(data.value);
-      });
-  }, [open]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      if (password.trim() === correctPassword) {
+    try {
+      const { data, error: rpcError } = await supabase.rpc('verify_secret_page_code', {
+        p_code: password,
+      });
+      if (rpcError) throw rpcError;
+
+      if (data === true) {
         localStorage.setItem(UNLOCK_KEY, 'true');
         navigate('/secret-page');
         onOpenChange(false);
@@ -56,8 +50,11 @@ export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
         setError('Incorrect code. Keep searching for clues!');
         setPassword('');
       }
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
       setIsLoading(false);
-    }, 300);
+    }
   };
 
   const handleClose = () => {

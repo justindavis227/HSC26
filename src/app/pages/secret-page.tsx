@@ -40,6 +40,9 @@ interface ClaimResult {
   ticket_number?: number;
   tier?: string;
   already?: boolean;
+  // Delivered server-side ONLY for the gold winner (ticket #1). The URL is no
+  // longer publicly readable from camp_info; the claim RPC returns it here.
+  join_url?: string;
 }
 
 export function SecretPage() {
@@ -75,10 +78,9 @@ export function SecretPage() {
     return () => window.removeEventListener('resize', calc);
   }, []);
 
-  useEffect(() => {
-    supabase.from('camp_info').select('value').eq('key', 'secret_winner_join_url').maybeSingle()
-      .then(({ data }) => { if (data?.value) setJoinUrl(data.value); });
-  }, []);
+  // The winner-join URL is no longer fetched here — it's not publicly readable.
+  // It arrives only in the claim_secret_ticket response, and only for the gold
+  // winner (see handleSubmit).
 
   if (!isSecretPageUnlocked()) return null;
 
@@ -106,6 +108,7 @@ export function SecretPage() {
       if (result.status === 'issued' && result.ticket_number) {
         setTicketNumber(result.ticket_number);
         setAlready(!!result.already);
+        if (result.join_url) setJoinUrl(result.join_url);
         setPhase('issued');
       } else if (result.status === 'sold_out') {
         setPhase('sold_out');

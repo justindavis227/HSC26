@@ -72,7 +72,7 @@ export function PasswordModal({ open, onOpenChange }: PasswordModalProps) {
             Enter Secret Code
           </DialogTitle>
           <DialogDescription>
-            You've found all the clues! Enter the secret code to unlock the secret page.
+            You've found all the clues! Enter the secret code to unlock the secret page. (No BB or IN)
           </DialogDescription>
         </DialogHeader>
 

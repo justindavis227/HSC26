@@ -1,5 +1,5 @@
 import { Home, Calendar, Users, Map, Info, Phone, Bell, HelpCircle, Building2, Trophy } from 'lucide-react';
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter } from 'react-router';
 import { DashboardLayout } from './components/dashboard-layout';
 import { PreShowLayout } from './components/pre-show-layout';
 import { PreShowPage } from './pages/pre-show';
@@ -78,16 +78,41 @@ export const router = createBrowserRouter([
     ],
   },
 
-  // Pre-Show 2026 — public site is limited to these three pages for the summer.
-  // The full camp app lives on `main`; everything else redirects to the landing.
+  // Main app routes — full camp app (restored after camp 2026)
   {
     path: '/',
+    element: <DashboardLayout />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: 'announcements', element: <AnnouncementsPage /> },
+      { path: 'schedule', element: <SchedulePage /> },
+      { path: 'campus-map', element: <CampusMapPage /> },
+      { path: 'group-materials', element: <GroupMaterialsPage /> },
+      { path: 'group-cards',     element: <GroupCardsPage /> },
+      { path: 'decision-guide', element: <DecisionGuidePage /> },
+      { path: 'session-info', element: <SessionInfoPage /> },
+      { path: 'seating-chart', element: <SeatingChartPage /> },
+      { path: 'speakers', element: <SpeakersPage /> },
+      { path: 'speakers/:speakerName', element: <SpeakerDetailPage /> },
+      { path: 'themes', element: <ThemesPage /> },
+      { path: 'activities', element: <ActivitiesPage /> },
+      { path: 'contacts', element: <ContactsPage /> },
+      { path: 'campus-info', element: <CampusInfoPage /> },
+      { path: 'campus-info/:campusName', element: <CampusDetailPage /> },
+      { path: 'faq', element: <FAQPage /> },
+      { path: 'secret-page', element: <SecretPage /> },
+      { path: 'video-submission', element: <VideoSubmissionPage /> },
+      { path: '*', element: <NotFoundPage /> },
+    ],
+  },
+
+  // Pre-Show 2026 summer landing — kept for reference / show-and-tell.
+  // Links from it (/video-submission, /secret-page) resolve into the full app.
+  {
+    path: '/pre-show',
     element: <PreShowLayout />,
     children: [
       { index: true, element: <PreShowPage /> },
-      { path: 'video-submission', element: <VideoSubmissionPage /> },
-      { path: 'secret-page', element: <SecretPage /> },
-      { path: '*', element: <Navigate to="/" replace /> },
     ],
   },
 ]);
